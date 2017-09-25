@@ -1,0 +1,10 @@
+*.Rproj.user
+*.Rproj
+.Rhistory
+*.tar.gz
+NAMESPACE
+man/
+reference
+*.Rcheck/
+*.*~
+*~
