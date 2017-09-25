@@ -1,13 +1,12 @@
 Package: fingerprinting
-Title: Tools of Regularized Optimal Fingerprinting.
+Title: Tools of Regularized Optimal Fingerprinting
 Version: 0.1-1
 Date: 2017-09-22
 Authors@R: c(
     person(given = "Yan", family = "Li",
            email = "yan.4.li@uconn.edu",
            role = c("aut", "cre")),
-    person(given = "Jun", family = "Yan", role = "aut"),
-    )
+    person(given = "Jun", family = "Yan", role = "aut"))
 Description: Tools of Regularized Optimal fingerprinting is an R extension
     of the algorithms described in Ribes et al. 2013, Allen and Stott 2003.
     It currently contains functions to detect the signal factors via OLS or TLS 
@@ -15,9 +14,9 @@ Description: Tools of Regularized Optimal fingerprinting is an R extension
 Depends:
     R (>= 3.2.0)
 Imports:
-    expm, fastclime, flare, glasso, MASS
+    expm, MASS, stats
 License: GPL (>= 3)
-URL: 
-BugReports: 
+URL: https://github.com/LiYanStat/fingerprinting
+BugReports: https://github.com/LiYanStat/fingerprinting/issues
 Repository: CRAN
 RoxygenNote: 5.0.1

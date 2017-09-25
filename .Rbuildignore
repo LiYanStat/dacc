@@ -1,0 +1,13 @@
+\.tar\.gz$
+\.Rproj$
+^\.Rproj\.user$
+^\.Rhistory$
+\.Rcheck$
+~$
+^\.\#
+^\#
+^\.git$
+^\.travis\.yml$
+^Makefile$
+^NEWS\.md$
+^README\.md$
