@@ -20,10 +20,12 @@
 ##' @param confidence.level confidence level for OLS method.
 ##' @param conf.level confidence level for TLS method.
 ##' @param ci.approach formula for computing confidence interval in TLS.
+##' @param cov.method algorithm for computing the covariance matrix.
 ##' @return a list of the fitted model including point estimate and 
 ##' interval estimate of coefficient, p value of the residual consistency test.
 ##' @author Yan Li
-##' @references Ribes et al. 2013, Allen and Stott 2003.
+##' @references Ribes et al. 2013, Allen and Stott 2003, Fan et al. 2015, 
+##' Friedman et al 2008.
 ##' @keywords Regularized Fingerprinting, OLS, TLS
 ##' @examples
 ##' data(cnrmDat)
@@ -45,16 +47,37 @@
 ##' ## different residual consistency test 
 ##' regFingerprint(Y, X, nruns.X, Proj, factors, lm.method = "TLS", Z.pw, Z.rct, 
 ##' rct.method = "MC")
-##' @import MASS stats utils
+##' @import MASS stats utils glasso flare methods
 ##' @importFrom expm sqrtm
 ##' @export regFingerprint
 regFingerprint <- function(Y, X, nruns.X, Proj, signal, lm.method, Z.pw, Z.rct, rct.method, 
                            confidence.level = 0.05, 
                            conf.level = 0.1, 
-                           ci.approach = c("AS03", "ODP")) {
+                           ci.approach = c("AS03", "ODP"), 
+                           cov.method = c("LW", "glasso", "flare", "fastclime")) {
   X <- as.matrix(X)
-  cov <- lwRegcov(t(Z.pw))  ## compute the covariance matrix
-  cov.inv <- solve(cov)  ## compute the precision matrix
+  cov.method <- match.arg(cov.method)
+  ## compute the covariance matrix and precision matrix
+  if (cov.method == "LW") {
+    cov <- lwRegcov(t(Z.pw))
+    cov.inv <- solve(cov)
+  } else if (cov.method == "glasso") {
+    S <- var(t(Z.pw))
+    tmpList <- glasso(S, rho=.02)
+    cov <- tmpList$w
+    cov.inv <- tmpList$wi
+  } else if (cov.method == "flare") {
+    out <- sugm(t(Z.pw), verbose = FALSE)
+    output <- sugm.select(out, verbose = FALSE)
+    cov.inv <- as.matrix(output$opt.icov)
+    cov <- solve(cov.inv)
+  } else if (cov.method == "fastclime") {
+    cov <- NULL
+    cov.inv <- NULL
+  } else {
+    stop("unknown algorithm for estimating covariance and precision matrix")
+  }
+  ## estimate coefficient and confidence interval
   if (lm.method == "OLS") {
     ## l <- lm.gls(Y ~ X - 1, W = solve(cov))
     Ft <- t(solve(t(X) %*% cov.inv %*% X) %*% t(X) %*% cov.inv)
