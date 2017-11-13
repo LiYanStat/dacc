@@ -544,6 +544,61 @@ projFullank <- function(t.n, spa.n) {
   Proj
 }
 
+
+
+##' Large-Dimensional Covariance Matrix Estimators
+##' This function provide several estimators for the 
+##' covaraince matrix under different loss functions
+##'
+##' @param X sample used to estimate covariance matrix.
+##' X should be a n*p matrix indicating sample size n 
+##' and dimension of covariance matrix p
+##' @param loss loss function to minimize, should be 
+##' one of "l2", "stein", "mv"
+##' @return a estimate of covariance matrix.
+##' @author Yan Li
+##' @references 
+##' Ledoit O., M. Wolf (2004) A well-conditioned estimator for 
+##' large-dimensional covariance matrices. 
+##' Journal of Multivariate Analysis, 88(2): 365-411.
+##' 
+##' Ledoit O., M. Wolf (2017) 
+##' Direct Nonlinear Shrinkage Estimation of 
+##' Large-Dimensional Covariance Matrice.
+##' Working paper. avaliable at 
+##' https://ssrn.com/abstract=3047302
+##' 
+##' Oliver Ledoit and Michael Wolf (2017)
+##' Optimal Estimation of a Large-Dimensional 
+##' Covariance Matrix under Stein's Loss
+##' Working paper. avaliable at 
+##' http://dx.doi.org/10.2139/ssrn.2264903
+##' 
+##' @keywords large-dimension, covariance matrix, stein's loss
+##' @examples
+##' X <- sapply(1:20, function(x) {rnorm(10, )})
+##' Covest(X, loss = "mv")
+##' @import Iso
+##' @export Covest
+Covest <- function(X, loss = c("l2", "stein", "mv")) {
+  loss <- match.arg(loss)
+  if (!loss %in% c("l2", "stein", "mv")) {
+    stop("please select one objective function from 'l2', 'stein' or 'mv'")
+  }
+  output <- NULL
+  if (loss == "l2") {
+    ## Linear shrinkage estimator under frobenious loss function
+    output <- lwRegcov(X)
+  } else if (loss == "mv") {
+    ## Nonlinear shrinkage estimator under minimum variance loss function
+    output <- lwMvcov(X)
+  } else {
+    ## Nonlinear shrinkage estimator under stein's loss function
+    ## output <- lwSteincov(X)
+  }
+  output
+}
+
 ## compute the regularized estimate of the covariance matrix
 ## References:
 ## Ledoit O., M. Wolf (2004) A well-conditioned estimator for 
@@ -575,4 +630,57 @@ lwRegcov <- function(X) {
   a2 <- d2 - b2  ## fourth estimate in L&W
   ## the regularized estimate of the covariance matrix
   b2 * m / d2 * Ip + a2 / d2 * sample.cov
+}
+
+## compute the regularized estimate of the covariance matrix
+## References:
+## Ledoit O., M. Wolf (2017) 
+## Direct Nonlinear Shrinkage Estimation of 
+## Large-Dimensional Covariance Matrice.
+## Working paper. avaliable at 
+## https://ssrn.com/abstract=3047302
+
+lwMvcov <- function(X) {
+  ## input: 
+  ##   the sample replicates of the random vector, 
+  ##   denoted by n*p matrix X.
+  ## output:
+  ##   nonlinear shrinkage covariance matrix under minimum variance 
+  ##   loss function.
+  n <- nrow(X)
+  p <- ncol(X)
+  ## sample covariance matrix
+  sample.cov <- t(X) %*% X / n
+  ## eigen value and vectors
+  lambda <- eigen(sample.cov)$value
+  eigen.v <- eigen(sample.cov)$vectors
+  temOd <- order(lambda)
+  lambda <- lambda[temOd]
+  eigen.v <- eigen.v[, temOd]
+  ## compute the direct kernal estimator
+  lambda.tilde <- lambda[max(1, p - n  + 1):p]
+  h <- n^-0.35
+  L <- matrix(rep(lambda.tilde, min(p, n)), length(lambda.tilde), min(p,n))
+  TemM <- 4 * t(L)^2 * h^2 - (L - t(L))^2
+  TemM[TemM < 0] = 0
+  ftilde <- colMeans(sqrt(TemM) / (2 * pi * h^2 * t(L)))
+  TemM <- -(4 * t(L)^2 * h^2 - (L - t(L))^2)
+  TemM[TemM < 0] = 0
+  Hftilde <- colMeans((sign(L - t(L)) * sqrt(TemM) - L + t(L)) / 
+                        (2 * pi * h^2 * t(L)))
+  if(p <= n) {
+    ## non-singular case
+    dtilde <- lambda.tilde / ((pi * p / n * lambda.tilde * ftilde)^2 + 
+                                (1 - p/n - pi * p/n * lambda.tilde * Hftilde)^2)
+  } else {
+    ## singular case
+    Hftilde0 <- (1 - sqrt(1 - 4 * h^2)) / (2 * pi * h^2) * mean(1 / lambda.tilde)
+    dtilde0 <- 1 / (pi * (p - n) / n * Hftilde0)
+    dtilde1 <- lambda.tilde / (pi^2 * lambda.tilde^2 * (ftilde^2 + Hftilde^2))
+    dtilde <- c(rep(dtilde0, p-n), dtilde1)
+  }
+  ## Pool Adjacent Violators algorithm.
+  dtilde <- pava(dtilde)
+  ## output the covariance matrix
+  eigen.v %*% diag(dtilde) %*% t(eigen.v)
 }

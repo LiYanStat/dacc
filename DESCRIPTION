@@ -14,7 +14,7 @@ Description: Tools of Regularized Optimal fingerprinting is an R extension
 Depends:
     R (>= 3.2.0)
 Imports:
-    expm, MASS, stats, glasso, flare, methods
+    expm, MASS, stats, glasso, flare, methods, Iso
 License: GPL (>= 3)
 URL: https://github.com/LiYanStat/fingerprinting
 BugReports: https://github.com/LiYanStat/fingerprinting/issues
