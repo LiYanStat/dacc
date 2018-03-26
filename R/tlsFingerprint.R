@@ -13,7 +13,7 @@
 ##' matrix estimate is used, precision should be set to TRUE.
 ##' @return a list of the fitted model including point estimate and
 ##' interval estimate of coefficients and corresponding estimate of 
-##' covariance matrix.
+##' standard error.
 ##' @author Yan Li
 ##' @keywords Regularized Fingerprinting, Generalized TLS
 ##' @references \itemize{ 
