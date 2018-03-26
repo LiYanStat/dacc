@@ -1,12 +1,13 @@
 Package: fingerprinting
 Title: Tools of Regularized Optimal Fingerprinting and 
        Shrinkage Estimators of Covariance Matrix
-Version: 0.1-1.2
+Version: 0.1-12
 Date: 2018-03-27
 Authors@R: c(
     person(given = "Yan", family = "Li",
            email = "yan.4.li@uconn.edu",
            role = c("aut", "cre")),
+    person(given = "Kun", family = "Chen", role = "aut"),
     person(given = "Jun", family = "Yan", role = "aut"))
 Description: Conduct Regularized optimal fingerprinting via GLS and 
     generalized TLS for climate change detection. Point and interval estimator 
@@ -21,4 +22,4 @@ License: GPL (>= 3)
 URL: https://github.com/LiYanStat/fingerprinting
 BugReports: https://github.com/LiYanStat/fingerprinting/issues
 Repository: CRAN
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
