@@ -110,19 +110,17 @@ lwRegcov <- function(Z) {
   ##   each column represents a random variable. Thus Z is n*p matrix
   ## output:
   ##   regularized covariance matrix
-  n <- nrow(Z)
-  p <- ncol(Z)
-  sample.cov <- cov(Z)
+  n <- nrow(X)
+  p <- ncol(X)
+  sample.cov <- cov(X)
   Ip <- diag(p)
   m <- sum(diag(sample.cov %*% Ip)) / p ## first estimate in L&W
-  Zp <- sample.cov - m * Ip
-  d2 <- sum(diag(Zp %*% t(Zp))) / p  ## second estimate in L&W
-  bt <- NULL
-  for (i in 1:n) {
-    Zr.i <- matrix(Z[i, ], nrow = 1)
-    M.i <- t(Zr.i) %*% Zr.i
-    bt <- c(bt, sum(diag((M.i - sample.cov) %*% t(M.i - sample.cov))) / p)
-  }
+  Xp <- sample.cov - m * Ip
+  d2 <- sum(diag(Xp %*% t(Xp))) / p  ## second estimate in L&W
+  
+  bt <- (diag(X %*% t(X))^2 - 2 * diag(X %*% sample.cov %*% t(X)) + rep(1, n) *
+           sum(diag(sample.cov %*% sample.cov))) / p
+  
   bb2 <- 1 / n^2 * sum(bt)
   b2 <- min(bb2,d2)  ## third estimate in L&W
   a2 <- d2 - b2  ## fourth estimate in L&W
