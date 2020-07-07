@@ -19,12 +19,12 @@
 ##' Direct Nonlinear Shrinkage Estimation of 
 ##' Large-Dimensional Covariance Matrices, Working Paper No. 264, UZH.}
 ##' @examples
-##' data(CanadaPrcp)
-##' Z <- scale(CanadaPrcp$x.all, center = TRUE, scale = FALSE)
+##' ## randomly generate a n * p matrix where n = 50, p = 100
+##' Z <- matrix(rnorm(50 * 100), nrow = 50, 100)
 ##' ## linear shrinkage estimator under l2 loss
 ##' Cov.est <- Covest(Z, method = "l2")$output
 ##' ## nonlinear shrinkage estimator under minimum variance loss
-##' Cov.est <- Covest(Z, method = "mv")$output
+##' Cov.est <- Covest(Z, method = "mv", bandwidth = 0.35)$output
 ##' @importFrom Iso pava
 ##' @export Covest
 Covest <- function(Z, method = c("mv", "l2"), bandwidth = NULL) {
@@ -62,7 +62,8 @@ Covest <- function(Z, method = c("mv", "l2"), bandwidth = NULL) {
       h.par <- bandwidth[which.min(mv.select)]
       output <- lwMvcov(Z, h.par)
     } else {
-      output <- lwMvcov(Z, bandwidth)
+      h.par <- bandwidth
+      output <- lwMvcov(Z, h.par)
     }
   } else {
     ## Nonlinear shrinkage estimator under stein's loss function
@@ -110,15 +111,15 @@ lwRegcov <- function(Z) {
   ##   each column represents a random variable. Thus Z is n*p matrix
   ## output:
   ##   regularized covariance matrix
-  n <- nrow(X)
-  p <- ncol(X)
-  sample.cov <- cov(X)
+  n <- nrow(Z)
+  p <- ncol(Z)
+  sample.cov <- cov(Z)
   Ip <- diag(p)
   m <- sum(diag(sample.cov %*% Ip)) / p ## first estimate in L&W
-  Xp <- sample.cov - m * Ip
-  d2 <- sum(diag(Xp %*% t(Xp))) / p  ## second estimate in L&W
+  Zp <- sample.cov - m * Ip
+  d2 <- sum(diag(Zp %*% t(Zp))) / p  ## second estimate in L&W
   
-  bt <- (diag(X %*% t(X))^2 - 2 * diag(X %*% sample.cov %*% t(X)) + rep(1, n) *
+  bt <- (diag(Z %*% t(Z))^2 - 2 * diag(Z %*% sample.cov %*% t(Z)) + rep(1, n) *
            sum(diag(sample.cov %*% sample.cov))) / p
   
   bb2 <- 1 / n^2 * sum(bt)
@@ -127,6 +128,10 @@ lwRegcov <- function(Z) {
   ## the regularized estimate of the covariance matrix
   b2 * m / d2 * Ip + a2 / d2 * sample.cov
 }
+
+
+
+
 
 
 ## compute the regularized estimate of the covariance matrix
@@ -158,6 +163,18 @@ lwMvcov <- function(Z, h.par) {
   temOd <- order(lambda)
   lambda <- lambda[temOd]
   eigen.v <- eigen.v[, temOd]
+  ## check whether the eigenvalues are close to zero
+  ## avoid effects of extremely small eigenvalues
+  test <- sum(sapply(lambda, 
+                     function(x) {
+                       x < 5 * 10^{-5}
+                     }) != "TRUE")
+  if(test < p) {
+    n <- test
+  }
+  if(p == n) {
+    n <- n - 1
+  }
   ## compute the direct kernal estimator
   lambda.tilde <- lambda[max(1, p - n  + 1):p]
   h <- n^(-h.par)

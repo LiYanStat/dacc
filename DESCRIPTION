@@ -1,7 +1,7 @@
-Package: fingerprinting
+Package: dacc
 Title: Tools of Regularized Optimal Fingerprinting and 
        Shrinkage Estimators of Covariance Matrix
-Version: 0.1-12
+Version: 0.0.1
 Date: 2018-03-27
 Authors@R: c(
     person(given = "Yan", family = "Li",
@@ -17,9 +17,9 @@ Description: Conduct Regularized optimal fingerprinting via GLS and
 Depends:
     R (>= 3.2.3)
 Imports:
-    expm, MASS, stats, utils, methods, Iso
+    MASS, stats, utils, methods, Iso
 License: GPL (>= 3)
 URL: https://github.com/LiYanStat/fingerprinting
 BugReports: https://github.com/LiYanStat/fingerprinting/issues
 Repository: CRAN
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.1

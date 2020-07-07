@@ -9,8 +9,17 @@
 ##' covariance matrix or precision matrix.
 ##' @param nruns.X number of ensembles to estimate the corresponding pattern. 
 ##' It is used as the scale of the covariance matrix for Xi.
+##' @param ctlruns a group of independent control runs for estimating 
+##' covariance matrix, which is used in two stage bootstrap.
+##' @param method method for estimation of covariance matrix in TSB procedure. 
+##' It should be consistent to the method to get cov. 
 ##' @param precision indicator for precision matrix, if precision 
 ##' matrix estimate is used, precision should be set to TRUE.
+##' @param B number of replicates in two stage bootstrap, default value 
+##' is 1000.
+##' @param tsb indicator for two stage bootstrap, if true the TSB procedure 
+##' will be implemented and reported in results.
+##' @param conf.level confidence level for confidence interval estimation
 ##' @return a list of the fitted model including point estimate and
 ##' interval estimate of coefficients and corresponding estimate of 
 ##' standard error.
@@ -24,44 +33,133 @@
 ##' \item Pesta, Total least squares and bootstrapping with 
 ##' applications in calibration, 2012, Statistics.}
 ##' @examples
-##' data(CanadaPrcp)
-##' ## estimate covariance matrix
-##' Z <- scale(CanadaPrcp$x.all, center = TRUE, scale = FALSE)
+##' data(simDat)
+##' ## set the true covariance matrix and expected pattern
+##' Cov <- simDat$Cov[[1]]
+##' ANT <- simDat$X[, 1]
+##' NAT <- simDat$X[, 2]
+##' ## estimate the covariance matrix
+##' Z <- MASS::mvrnorm(100, mu = rep(0, nrow(Cov)), Sigma = Cov)
 ##' ## linear shrinkage estimator under l2 loss
 ##' Cov.est <- Covest(Z, method = "l2")$output
-##' ## nonlinear shrinkage estimator under minimum variance loss
-##' Cov.est <- Covest(Z, method = "mv")$output
-##' ## regression obervation and pattern
-##' Y <- CanadaPrcp$Y.observation
-##' X <- colMeans(CanadaPrcp$x.ant)
-##' tlsFingerprint(X, Y, nruns.X = length(X), Cov.est)
+##' ## generate regression observation and pattern
+##' nruns.X <- c(1, 1)
+##' Y <- MASS::mvrnorm(n = 1, mu = ANT + NAT, Sigma = Cov)
+##' X <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov),
+##'            MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov))
+##' tlsFingerprint(X, Y, Cov.est, nruns.X, ctlruns = Z, method = "mv", B = 10)
 ##' @import MASS stats utils methods
-##' @importFrom expm sqrtm
 ##' @export tlsFingerprint
-tlsFingerprint <- function(X, Y, nruns.X, cov, precision = FALSE) {
+
+tlsFingerprint <- function(X, Y, cov, nruns.X, ctlruns, method, 
+                           precision = FALSE, B = 1000, tsb = FALSE, 
+                           conf.level = 0.90) {
   X <- as.matrix(X)
+  if(is.null(colnames(X))) {
+    colnames(X) <- paste0("forcings ", 1:ncol(X))
+  }
   if (! precision) {
     tmpMat <- eigen(cov)
     cov.sinv <- Re(tmpMat$vectors %*% diag(1 / sqrt(tmpMat$values)) %*% 
                      t(tmpMat$vectors))
-    ## cov.sinv <- Re(sqrtm(cov))
   } else {
     tmpMat <- eigen(cov)
     cov.sinv <- Re(tmpMat$vectors %*% diag(sqrt(tmpMat$values)) %*% 
                      t(tmpMat$vectors))
   }
   
-  output <- tlsLm(cov.sinv %*% X, cov.sinv %*% Y, nruns.X)
-  beta.hat <- output$beta.hat
+  output <- tlsLm(cov.sinv %*% X, cov.sinv %*% Y, nruns.X, conf.level)
+  beta.hat <- as.vector(output$beta.hat)
   ci.estim <- output$ci
   sd.estim <- output$sd
-  
-  beta.hat <- as.vector(beta.hat)
+  ## names label of results
   names(beta.hat) <- colnames(X)
-  ## confidence interval
-  rownames(ci.estim) <- colnames(X)
-  colnames(ci.estim) <- c("Boot lower bound", "Boot upper bound", 
-                          "Norm lower bound", "Norm upper bound")
+  rownames(ci.estim) <- c(paste0("B: ", colnames(X)), 
+                          paste0("N: ", colnames(X)))
+  colnames(ci.estim) <- paste0(c("lower ", "upper "), c((1 - conf.level) / 2, (1 + conf.level) / 2) * 100, "%")
+  rownames(sd.estim) <- c("B", "N")
+  colnames(sd.estim) <- colnames(X)
+  
+  if (tsb) {
+    boot <- lapply(1:B,
+                   function(i) {
+                     for(i in 1:500) {
+                       cov.sinv <- tryCatch({
+                         resample <- sample(1:nrow(ctlruns),
+                                           nrow(ctlruns), replace = TRUE)
+                         resample <- unique(resample)
+                         ## boot.sample <- genClt(nrow(ctlruns), B = 1, cov)[[1]]
+                         boot.sample <- ctlruns[resample, ]
+                         if(method == "l2") {
+                           cov.boot <- Covest(boot.sample, method = "l2")[[1]]
+                         } else if (method == "mv") {
+                           cov.boot <- Covest(boot.sample, method = "mv", bandwidth = 0.35)[[1]]
+                         }
+                         ## compute inverse cov
+                         if (! precision) {
+                           tmpMat <- eigen(cov.boot)
+                           cov.sinv <- Re(tmpMat$vectors %*% diag(1 / sqrt(tmpMat$values)) %*% 
+                                            t(tmpMat$vectors))
+                         } else {
+                           tmpMat <- eigen(cov.boot)
+                           cov.sinv <- Re(tmpMat$vectors %*% diag(sqrt(tmpMat$values)) %*% 
+                                            t(tmpMat$vectors))
+                         }
+                         cov.sinv
+                       }, error = function(e) {
+                         ""
+                       })
+                       if(cov.sinv[[1]] != "") {
+                         break
+                       }
+                     }
+                     output.b <- tlsLm.boot(cov.sinv %*% X, cov.sinv %*% Y, nruns.X, B=1000)
+                     output.b
+                   })
+    
+    boot.res <- vector("list", 2)
+    
+    for(m in 1:length(boot)) {
+      boot.res[[1]] <- rbind(boot.res[[1]], boot[[m]]$beta.s)
+      boot.res[[2]] <- rbind(boot.res[[2]], t(boot[[m]]$beta.s.list))
+    }
+    
+    FSB.sd <- apply(boot.res[[1]], 2, sd)
+    
+    ## get critical value
+    alpha <- 1 - conf.level
+    Z.crt <- qnorm(alpha / 2, lower.tail = FALSE)
+    
+    ## first stage bootstrap for benchmark
+    ci.FSB <- cbind(beta.hat - Z.crt * FSB.sd, 
+                    beta.hat + Z.crt * FSB.sd)
+    ci.estim <- rbind(ci.estim, ci.FSB)
+    sd.estim <- rbind(sd.estim, FSB.sd)
+    
+    ## two stage bootstrap results
+    TSB.sd <- apply(boot.res[[2]], 2, sd)
+    ci.TSB <- t(apply(boot.res[[2]], 2, 
+                      function(x) {
+                        quantile(x, c(alpha / 2, alpha / 2 + conf.level))
+                      }))
+    ci.estim <- rbind(ci.estim, ci.TSB)
+    sd.estim <- rbind(sd.estim, TSB.sd)
+    ci.TSBv <- cbind(beta.hat - Z.crt * TSB.sd, 
+                     beta.hat + Z.crt * TSB.sd)
+    ci.estim <- rbind(ci.estim, ci.TSBv)
+    ## confidence interval
+    rownames(ci.estim) <- c(paste0("B: ", colnames(X)), 
+                            paste0("N: ", colnames(X)),
+                            paste0("FSB: ", colnames(X)), 
+                            paste0("TSB: ", colnames(X)), 
+                            paste0("TSBv: ", colnames(X)))
+    colnames(sd.estim) <- colnames(X)
+    rownames(sd.estim) <- c("B",
+                            "N", 
+                            "FSB", 
+                            "TSB")
+  }
+  
   ## residual consistency test
   result <- list(coefficient = beta.hat,
                  confidence.interval = ci.estim, 
@@ -69,9 +167,131 @@ tlsFingerprint <- function(X, Y, nruns.X, cov, precision = FALSE) {
   result
 }
 
+## estimate via Total least square approach
+tlsLm <- function(X, Y, nruns.X, conf.level) {
+  ## input: 
+  ##   X: n*k matrix, including k predictors
+  ##   Y: n*1 matrix, the observations
+  ##   nruns.X: the number of runs used for computing each columns of X
+  ## output: 
+  ##   a list containing the estimate and confidence interval of the scaling 
+  ##   factors estimate.
+  ##   coefficient: a k vector, the scaling factors best-estimates
+  ##   confidence interval: the lower and upper bounds of the confidence 
+  ##   interval on each scaling factor. 
+  ##   dcons: the variable used in the residual consistency check. 
+  ##   X.tilde: a k*n matrix, the reconstructed responses patterns TLS fit,
+  ##   Y.tilde: a 1*n matrix, the reconstructed observations TLS fit.
+  if (! is.matrix(Y)) {
+    stop("Y should be a n*1 matrix")
+  }
+  if (dim(X)[1] != dim(Y)[1])  {  ## check size of X and Y
+    stop("sizes of inputs X, Y are not consistent")
+  }
+  n <- dim(Y)[1]  ## number of observations
+  m <- dim(X)[2]  ## number of predictors
+  ## Normalise the variance of X
+  X <- X * t(sqrt(nruns.X) %*% matrix(1, 1, n))
+  if(length(nruns.X) != 1) {
+    Dn.X <- diag(sqrt(nruns.X))
+  } else {
+    Dn.X <- sqrt(nruns.X)
+  }
+  Estls <- function(X, Y, Dn.X) {
+    M <- cbind(X, Y)
+    
+    lambda <- tail(eigen(t(M) %*% M)$values, 1)
+    
+    sigma2.hat <- lambda / n
+    
+    Delta.hat <- (t(X) %*% X - lambda * diag(m)) / n
+    
+    ## beta.hat for the tls regression for adjusted X and Y with equal variance
+    beta.hat1 <- as.vector(solve(t(X) %*% X - lambda * diag(m)) %*% t(X) %*% Y)
+    ## beta.hat1 <- as.vector(RegGTLS(Y, X))
+    ## [I|beta.hat1]
+    I.b <- cbind(diag(m), beta.hat1)
+    ## var.hat for beta.hat1
+    Var.hat1 <- sigma2.hat * (1 + sum(beta.hat1^2)) * 
+      (solve(Delta.hat) + sigma2.hat * solve(Delta.hat) %*% 
+         solve(I.b %*% t(I.b)) %*% solve(Delta.hat)) / n
+    
+    ## beta.hat and var.hat for the un prewhitening X and Y
+    beta.hat <- beta.hat1 %*% Dn.X
+    
+    Var.hat <- diag(Var.hat1) * nruns.X
+    
+    list(beta.hat = beta.hat, Var.hat = Var.hat)
+  }
+  
+  tmp.res <- Estls(X, Y, Dn.X)
+  
+  beta.hat <- tmp.res$beta.hat
+  
+  var.hat <- tmp.res$Var.hat
+  
+  Z.crt <- qnorm((1 - conf.level) / 2, lower.tail = FALSE)
+  
+  ## confidence interval from asymptotical normal distribution
+  ci.norm <- cbind(t(beta.hat - Z.crt * sqrt(var.hat)), 
+                   t(beta.hat + Z.crt * sqrt(var.hat)))
+  
+  colnames(ci.norm) <- c(0.5 - conf.level / 2, 0.5 + conf.level / 2)
+  
+  B <- 1000
+  
+  ## nonparamatric bootstrap
+  for(i in 1:1000) {
+    beta.s <- tryCatch({
+      resample <- sapply(1:B,
+                         function(x) {
+                           sample(1:n, size = n, replace = TRUE)
+                         })
+      beta.s <- apply(resample, 2,
+                      function(x) {
+                        Xs <- X[x, ]
+                        Ys <- Y[x, ]
+                        Estls(Xs, Ys, Dn.X)$beta.hat
+                      })
+      if(ncol(X) == 1) {
+        matrix(beta.s, ncol = B)
+      } else {
+        beta.s
+      }
+    }, error = function(e) {
+      as.matrix(c(0, 0))
+    })
+    if (ncol(beta.s) == B) {
+      break
+    }
+  }
+  
+  alpha <- 1 - conf.level
+  
+  ci.ordboot <- t(apply(beta.s, 1, 
+                        function(x) {
+                          ## x <- rmout(x)
+                          quantile(x, c(alpha / 2, alpha / 2 + conf.level))
+                        }))
+  
+  sd.ordboot <- t(apply(beta.s, 1, 
+                        function(x) {
+                          ## x <- x[-which(x > quantile(x, 0.99) | x < quantile(x, 0.01))]
+                          ## x <- rmout(x)
+                          sd(x)
+                        }))
+  
+  sd.norm <- sqrt(var.hat)
+  
+  ## residual bootstrap
+  
+  list(beta.hat = beta.hat, ci = rbind(ci.ordboot, ci.norm), 
+       sd = rbind(sd.ordboot, sd.norm))
+}
 
 ## estimate via Total least square approach
-tlsLm <- function(X, Y, nruns.X, conf.level = 0.95) {
+## for two stage bootstrap
+tlsLm.boot <- function(X, Y, nruns.X, B = 100) {
   ## input: 
   ##   X: n*k matrix, including k predictors
   ##   Y: n*1 matrix, the observations
@@ -108,6 +328,7 @@ tlsLm <- function(X, Y, nruns.X, conf.level = 0.95) {
     
     ## beta.hat for the tls regression for adjusted X and Y with equal variance
     beta.hat1 <- as.vector(solve(t(X) %*% X - lambda * diag(m)) %*% t(X) %*% Y)
+    ## beta.hat1 <- as.vector(RegGTLS(Y, X))
     ## [I|beta.hat1]
     I.b <- cbind(diag(m), beta.hat1)
     ## var.hat for beta.hat1
@@ -123,19 +344,7 @@ tlsLm <- function(X, Y, nruns.X, conf.level = 0.95) {
     list(beta.hat = beta.hat, Var.hat = Var.hat)
   }
   
-  tmp.res <- Estls(X, Y, Dn.X)
-  
-  beta.hat <- tmp.res$beta.hat
-  
-  var.hat <- tmp.res$Var.hat
-  ## standard deviation from normal approximation
-  sd.norm <- sqrt(var.hat)
-  ## confidence interval from asymptotical normal distribution
-  ci.norm <- cbind(t(beta.hat - 1.96 * sqrt(var.hat)), 
-                   t(beta.hat + 1.96 * sqrt(var.hat)))
-  colnames(ci.norm) <- c("0.025", "0.975")
   ## nonparamatric bootstrap
-  B <- 1000
   for(i in 1:1000) {
     beta.s <- tryCatch({
       resample <- sapply(1:B,
@@ -149,7 +358,7 @@ tlsLm <- function(X, Y, nruns.X, conf.level = 0.95) {
                         Estls(Xs, Ys, Dn.X)$beta.hat
                       })
       if(ncol(X) == 1) {
-        matrix(beta.s, ncol = 1000)
+        matrix(beta.s, ncol = B)
       } else {
         beta.s
       }
@@ -161,13 +370,5 @@ tlsLm <- function(X, Y, nruns.X, conf.level = 0.95) {
     }
   }
   
-  alpha <- 1 - conf.level
-  
-  ci.ordboot <- t(apply(beta.s, 1, 
-                        function(x) {
-                          ## x <- x[-which(x > quantile(x, 0.999) | x < quantile(x, 0.001))]
-                          quantile(x, c(alpha / 2, alpha / 2 + conf.level))
-                        }))
-  
-  list(beta.hat = beta.hat, ci = cbind(ci.ordboot, ci.norm), sd = sd.norm)
+  list(beta.s.list = beta.s, beta.s = Estls(X, Y, Dn.X)$beta.hat)
 }
