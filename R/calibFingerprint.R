@@ -46,7 +46,9 @@
 ##' X <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov),
 ##'            MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov))
 ##' res <- calibFingerprint(X, Y, nruns.X, rep.num = nrow(Z), Cov.est, method = "l2", B = 10)
-##' @import MASS stats utils methods
+##' @importFrom MASS mvrnorm
+##' @importFrom stats cov qnorm quantile sd
+##' @importFrom utils tail
 ##' @export calibFingerprint
 
 calibFingerprint <- function(X, Y, nruns.X, rep.num, cov, method, B = 1000) {
@@ -96,11 +98,11 @@ calibFingerprint <- function(X, Y, nruns.X, rep.num, cov, method, B = 1000) {
     ## generate new dataset
     for(er in 1:500) {
       tmp.new <- tryCatch({
-        Y.new <- mvrnorm(n = 1, mu = output[, colnames(Y)], Sigma = cov)
+        Y.new <- MASS::mvrnorm(n = 1, mu = output[, colnames(Y)], Sigma = cov)
         X.new <- NULL
         for(X.ind in 1:ncol(X)) {
           X.new <- cbind(X.new,
-                         mvrnorm(n = 1, mu = output[, X.ind], Sigma = cov / nruns.X[X.ind]))
+                         MASS::mvrnorm(n = 1, mu = output[, X.ind], Sigma = cov / nruns.X[X.ind]))
         }
         ctlruns.new <- genClt(rep.num, 1, cov)[[1]]
         if (method == "l2") {

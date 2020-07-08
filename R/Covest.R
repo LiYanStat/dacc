@@ -198,7 +198,7 @@ lwMvcov <- function(Z, h.par) {
     dtilde <- c(rep(dtilde0, p - n), dtilde1)
   }
   ## Pool Adjacent Violators algorithm.
-  dtilde <- Iso::pava(dtilde)
+  dtilde <- pava(dtilde)
   ## output the covariance matrix
   eigen.v %*% diag(dtilde) %*% t(eigen.v)
 }

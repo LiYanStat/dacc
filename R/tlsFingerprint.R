@@ -48,7 +48,9 @@
 ##' X <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov),
 ##'            MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov))
 ##' tlsFingerprint(X, Y, Cov.est, nruns.X, ctlruns = Z, method = "mv", B = 10)
-##' @import MASS stats utils methods
+##' @importFrom MASS mvrnorm
+##' @importFrom stats cov qnorm quantile sd
+##' @importFrom utils tail
 ##' @export tlsFingerprint
 
 tlsFingerprint <- function(X, Y, cov, nruns.X, ctlruns, method, 
