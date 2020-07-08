@@ -11,7 +11,7 @@
 ##' default value are set to be list in (0.2, 0.5).
 ##' @return regularized estimate of covariance matrix.
 ##' @author Yan Li
-##' @keywords Regularized estimator
+##' @keywords htest
 ##' @references \itemize{ \item  Olivier Ledoit and Michael Wolf,
 ##' A well-conditioned estimator for large-dimensional 
 ##' covariance matrices, 2004, JMA. 
@@ -198,7 +198,7 @@ lwMvcov <- function(Z, h.par) {
     dtilde <- c(rep(dtilde0, p - n), dtilde1)
   }
   ## Pool Adjacent Violators algorithm.
-  dtilde <- pava(dtilde)
+  dtilde <- Iso::pava(dtilde)
   ## output the covariance matrix
   eigen.v %*% diag(dtilde) %*% t(eigen.v)
 }

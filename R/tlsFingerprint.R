@@ -24,7 +24,7 @@
 ##' interval estimate of coefficients and corresponding estimate of 
 ##' standard error.
 ##' @author Yan Li
-##' @keywords Regularized Fingerprinting, Generalized TLS
+##' @keywords regressuibm multivariate
 ##' @references \itemize{ 
 ##' \item  Gleser, Estimation in a Multivariate "Errors in Variables" 
 ##' Regression Model: Large Sample Results, 1981, Ann. Stat.
