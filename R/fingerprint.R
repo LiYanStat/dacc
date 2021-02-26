@@ -10,16 +10,17 @@
 ##' @param nruns.X number of ensembles to estimate the corresponding pattern. 
 ##' It is used as the scale of the covariance matrix for Xi.
 ##' @param ctlruns a group of independent control runs for estimating 
-##' covariance matrix, which is used in two stage bootstrap.
-##' @param method method for estimation of covariance matrix in TSB procedure. 
-##' It should be consistent to the method to get cov. 
+##' covariance matrix, which is used in two stage bootstrap and the parametric 
+##' bootstrap calibration.
 ##' @param precision indicator for precision matrix, if precision 
 ##' matrix estimate is used, precision should be set to TRUE.
-##' @param B number of replicates in two stage bootstrap, default value 
-##' is 1000.
-##' @param tsb indicator for two stage bootstrap, if true the TSB procedure 
-##' will be implemented and reported in results.
 ##' @param conf.level confidence level for confidence interval estimation
+##' @param conf.method method for calibrating the confidence intervals, including
+##' no calibration (none), two stage bootstrap (TSB), and parametric bootstrap calibration (PBC).
+##' @param cov.method method for estimation of covariance matrix in confidence 
+##' interval procedure. It should be consistent to the method to get cov. (only valid if TSB or PBC is considered.)
+##' @param B number of replicates in two stage bootstrap and/or parametric bootstrap calibration, 
+##' default value is 1000. (only valid if TSB or PBC is considered.)
 ##' @return a list of the fitted model including point estimate and
 ##' interval estimate of coefficients and corresponding estimate of 
 ##' standard error.
@@ -31,7 +32,8 @@
 ##' \item Golub and Laon, An Analysis of the Total Least Squares Problem,
 ##' 1980, SIAM J. Numer. Anal.
 ##' \item Pesta, Total least squares and bootstrapping with 
-##' applications in calibration, 2012, Statistics.}
+##' applications in calibration, 2012, Statistics.
+##' \item Li et al, Uncertainty in Optimal Fingerprinting is Underestimated, 2021.}
 ##' @examples
 ##' data(simDat)
 ##' ## set the true covariance matrix and expected pattern
@@ -47,16 +49,24 @@
 ##' Y <- MASS::mvrnorm(n = 1, mu = ANT + NAT, Sigma = Cov)
 ##' X <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov),
 ##'            MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov))
-##' tlsFingerprint(X, Y, Cov.est, nruns.X, ctlruns = Z, method = "mv", B = 10)
+##' fingerprint(X, Y, Cov.est, nruns.X, ctlruns = Z, conf.method = "TSB", B = 10)
 ##' @importFrom MASS mvrnorm
 ##' @importFrom stats cov qnorm quantile sd
 ##' @importFrom utils tail
-##' @export tlsFingerprint
+##' @export fingerprint
 
-tlsFingerprint <- function(X, Y, cov, nruns.X, ctlruns, method, 
-                           precision = FALSE, B = 1000, tsb = FALSE, 
-                           conf.level = 0.90) {
+fingerprint <- function(X, Y, cov, nruns.X, ctlruns,
+                        precision = FALSE, 
+                        conf.level = 0.90,
+                        conf.method = c("none", "TSB", "PBC", "both"),
+                        cov.method = c("l2", "mv"),
+                        B = 1000) {
   X <- as.matrix(X)
+  cov.method <- match.arg(cov.method)  ## method for the covariance matrix extimation
+  conf.method <- match.arg(conf.method)  ## the method for estimating covariance matrix
+  if(! conf.method %in% c("none", "TSB", "PBC", "both")) {
+    stop("Unknow method for confidence interval construction")
+  }
   if(is.null(colnames(X))) {
     colnames(X) <- paste0("forcings ", 1:ncol(X))
   }
@@ -82,7 +92,7 @@ tlsFingerprint <- function(X, Y, cov, nruns.X, ctlruns, method,
   rownames(sd.estim) <- c("B", "N")
   colnames(sd.estim) <- colnames(X)
   
-  if (tsb) {
+  if (conf.method == "TSB" | conf.method == "both") {
     boot <- lapply(1:B,
                    function(i) {
                      for(i in 1:500) {
@@ -92,9 +102,9 @@ tlsFingerprint <- function(X, Y, cov, nruns.X, ctlruns, method,
                          resample <- unique(resample)
                          ## boot.sample <- genClt(nrow(ctlruns), B = 1, cov)[[1]]
                          boot.sample <- ctlruns[resample, ]
-                         if(method == "l2") {
+                         if(cov.method == "l2") {
                            cov.boot <- Covest(boot.sample, method = "l2")[[1]]
-                         } else if (method == "mv") {
+                         } else if (cov.method == "mv") {
                            cov.boot <- Covest(boot.sample, method = "mv", bandwidth = 0.35)[[1]]
                          }
                          ## compute inverse cov
@@ -162,10 +172,61 @@ tlsFingerprint <- function(X, Y, cov, nruns.X, ctlruns, method,
                             "TSB")
   }
   
-  ## residual consistency test
-  result <- list(coefficient = beta.hat,
-                 confidence.interval = ci.estim, 
-                 var.est = sd.estim)
+  if(conf.method == "PBC" | conf.method == "both") {
+    ## compute the ratio for the parametric calibration bootstrap
+    
+    #### get the fitted X and Y in the model
+    output <- tlsFit(cov.sinv %*% X, cov.sinv %*% Y, nruns.X)
+    output <- Re(tmpMat$vectors %*% diag(sqrt(tmpMat$values)) %*% 
+                   t(tmpMat$vectors)) %*% output
+    #### conduct the calibration bootstrap
+    #### get number of control runs to estimate the covariance matrix
+    rep.num <- nrow(ctlruns)  
+    #### do the boostrap
+    out.beta <- out.var <- NULL
+    for (i in 1:B) {
+      ## generate new dataset
+      for(er in 1:500) {
+        tmp.new <- tryCatch({
+          Y.new <- MASS::mvrnorm(n = 1, mu = output[, colnames(Y)], Sigma = cov)
+          X.new <- NULL
+          for(X.ind in 1:ncol(X)) {
+            X.new <- cbind(X.new,
+                           mvrnorm(n = 1, mu = output[, X.ind], Sigma = cov / nruns.X[X.ind]))
+          }
+          ctlruns.new <- genClt(rep.num, 1, cov)[[1]]
+          if (cov.method == "l2") {
+            Cov.new <- Covest(ctlruns.new, method = "l2")$output
+          } else if (cov.method == "mv") {
+            Cov.new <- Covest(ctlruns.new, method = "mv", bandwidth = 0.35)$output
+          }
+          ## repeat the function without TSB and PBC
+          fingerprint(X.new, Y.new, Cov.new, nruns.X, ctlruns.new, conf.method = "none", cov.method = cov.method)
+        }, error = function(e) {
+          ""
+        })
+        if (tmp.new[1] != "") {
+          break
+        }
+      }
+      out.beta <- rbind(out.beta, tmp.new$coefficient)
+      out.var <- rbind(out.var, as.vector(tmp.new$var.est))
+    }
+    ## return the ratio for the parametric calibration bootstrap
+    ratio <- rbind(apply(out.beta, 2, sd), apply(out.beta, 2, sd)) / matrix(colMeans(out.var, na.rm = TRUE), nrow = 2)
+  }
+  
+  ## collect the output
+  if(conf.method %in% c("PBC", "both")) {
+    result <- list(coefficient = beta.hat,
+                   confidence.interval = ci.estim, 
+                   var.est = sd.estim, 
+                   pbc.ratio = ratio)
+  } else {
+    result <- list(coefficient = beta.hat,
+                   confidence.interval = ci.estim, 
+                   var.est = sd.estim)
+  }
   result
 }
 
@@ -373,4 +434,39 @@ tlsLm.boot <- function(X, Y, nruns.X, B = 100) {
   }
   
   list(beta.s.list = beta.s, beta.s = Estls(X, Y, Dn.X)$beta.hat)
+}
+
+
+
+## get the fitted expected response X and Y of the data
+tlsFit <- function(X, Y, nruns.X) {
+  if (! is.matrix(Y)) {
+    stop("Y should be a n*1 matrix")
+  }
+  if (dim(X)[1] != dim(Y)[1])  {  ## check size of X and Y
+    stop("sizes of inputs X, Y are not consistent")
+  }
+  n <- dim(Y)[1]  ## number of observations
+  m <- dim(X)[2]  ## number of predictors
+  ## Normalise the variance of X
+  X <- X * t(sqrt(nruns.X) %*% matrix(1, 1, n))
+  Estls <- function(X, Y) {
+    M <- cbind(X, Y)
+    svd.M <- svd(M)
+    output <- svd.M$u %*% diag(c(svd.M$d[1:m], 0)) %*% t(svd.M$v)
+    colnames(output) <- c(colnames(X), colnames(Y))
+    output
+  }
+  output <- Estls(X, Y)
+  output[, colnames(X)] <- output[, colnames(X)] / 
+    t(sqrt(nruns.X) %*% matrix(1, 1, n))
+  output
+}
+
+## generate independent replicates
+genClt <- function(n, B, Cov) {
+  lapply(1:B, 
+         function(x) {
+           MASS::mvrnorm(n, mu = rep(0, nrow(Cov)), Sigma = Cov)
+         })
 }
