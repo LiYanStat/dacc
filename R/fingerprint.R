@@ -188,7 +188,7 @@ fingerprint <- function(X, Y, cov, nruns.X, ctlruns,
       ## generate new dataset
       for(er in 1:500) {
         tmp.new <- tryCatch({
-          Y.new <- MASS::mvrnorm(n = 1, mu = output[, colnames(Y)], Sigma = cov)
+          Y.new <- MASS::mvrnorm(n = 1, mu = output[, "Y"], Sigma = cov)
           X.new <- NULL
           for(X.ind in 1:ncol(X)) {
             X.new <- cbind(X.new,
@@ -454,7 +454,7 @@ tlsFit <- function(X, Y, nruns.X) {
     M <- cbind(X, Y)
     svd.M <- svd(M)
     output <- svd.M$u %*% diag(c(svd.M$d[1:m], 0)) %*% t(svd.M$v)
-    colnames(output) <- c(colnames(X), colnames(Y))
+    colnames(output) <- c(colnames(X), "Y")
     output
   }
   output <- Estls(X, Y)
