@@ -14,7 +14,7 @@
 ##' bootstrap calibration.
 ##' @param precision indicator for precision matrix, if precision 
 ##' matrix estimate is used, precision should be set to TRUE.
-##' @param conf.level confidence level for confidence interval estimation
+##' @param conf.level confidence level for confidence interval estimation.
 ##' @param conf.method method for calibrating the confidence intervals, including
 ##' no calibration (none), two stage bootstrap (TSB), and parametric bootstrap calibration (PBC).
 ##' @param cov.method method for estimation of covariance matrix in confidence 
@@ -25,7 +25,7 @@
 ##' interval estimate of coefficients and corresponding estimate of 
 ##' standard error.
 ##' @author Yan Li
-##' @keywords regressuibm multivariate
+##' @keywords regression tls fingerprinting
 ##' @references \itemize{ 
 ##' \item  Gleser, Estimation in a Multivariate "Errors in Variables" 
 ##' Regression Model: Large Sample Results, 1981, Ann. Stat.

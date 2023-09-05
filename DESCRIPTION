@@ -17,9 +17,9 @@ Description: Conduct Regularized optimal fingerprinting via GLS and
 Depends:
     R (>= 3.5.0)
 Imports:
-    MASS, stats, utils, methods, Iso
+    MASS, stats, utils, methods, Iso, pracma, janitor, magrittr
 License: GPL (>= 3)
 URL: https://github.com/LiYanStat/dacc
 BugReports: https://github.com/LiYanStat/dacc/issues
 Repository: CRAN
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
