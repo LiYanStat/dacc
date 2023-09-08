@@ -26,7 +26,7 @@ install: $(tar)
 .PHONY: updateDate
 updateDate:
 	dt=$$(date +"%Y-%m-%d");\
-	sed -i "s/Date: [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}/Date: $$dt/" DESCRIPTION;
+	sed -i "" "s/Date: [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}/Date: $$dt/" DESCRIPTION;
 
 .PHONY: clean
 clean:

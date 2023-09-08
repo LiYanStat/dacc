@@ -1,25 +1,24 @@
 Package: dacc
-Title: Tools of Regularized Optimal Fingerprinting and 
-       Shrinkage Estimators of Covariance Matrix
-Version: 0.0-2
-Date: 2020-07-06
+Title: Detection and Attribution Analysis of Climate Change
+Version: 0.0-1
+Date: 2023-09-08
 Authors@R: c(
     person(given = "Yan", family = "Li",
            email = "yan.4.li@uconn.edu",
            role = c("aut", "cre")),
     person(given = "Kun", family = "Chen", role = "aut"),
     person(given = "Jun", family = "Yan", role = "aut"))
-Description: Conduct Regularized optimal fingerprinting via GLS and 
-    generalized TLS for climate change detection. Point and interval estimator 
-    for scaling factors under GLS and TLS. Provide shrinkage estimators from 
-    Ledoit&Wolf 2004 <doi:10.1016/S0047-259X(03)00096-4> and 
-    Ledoit&Wolf 2017 <doi:10.2139/ssrn.2383361>.
+Description: 
+    Conduct detection and attribution of climate change using methods including optimal fingerprinting via 
+    generalized total least squares or estimating equation. Provide shrinkage estimators for covariance 
+    matrix from Ledoit and Wolf (2004) <doi:10.1016/S0047-259X(03)00096-4>, and Ledoit and Wolf (2017) <doi:10.2139/ssrn.2383361>.
 Depends:
     R (>= 3.5.0)
 Imports:
-    MASS, stats, utils, methods, Iso, pracma, janitor, magrittr
+    MASS, stats, utils, Iso, pracma, janitor, magrittr
 License: GPL (>= 3)
+Encoding: UTF-8
 URL: https://github.com/LiYanStat/dacc
 BugReports: https://github.com/LiYanStat/dacc/issues
 Repository: CRAN
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3

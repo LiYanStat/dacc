@@ -49,7 +49,7 @@
 ##' Y <- MASS::mvrnorm(n = 1, mu = ANT + NAT, Sigma = Cov)
 ##' X <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov),
 ##'            MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov))
-##' fingerprint(X, Y, Cov.est, nruns.X, ctlruns = Z, conf.method = "TSB", B = 10)
+##' fingerprint(X, Y, Cov.est, nruns.X, ctlruns = Z, conf.method = "TSB", B = 5)
 ##' @importFrom MASS mvrnorm
 ##' @importFrom stats cov qnorm quantile sd
 ##' @importFrom utils tail
