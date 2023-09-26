@@ -16,8 +16,12 @@
 ##' A well-conditioned estimator for large-dimensional 
 ##' covariance matrices, 2004, JMA. 
 ##' \item Olivier Ledoit and Michael Wolf, 
-##' Direct Nonlinear Shrinkage Estimation of 
-##' Large-Dimensional Covariance Matrices, Working Paper No. 264, UZH.}
+##' Direct nonlinear shrinkage estimation of 
+##' large-dimensional covariance matrices, Working Paper No. 264, UZH.
+##' \item Li et al,
+##' Regularized fingerprinting in detection and attribution of climate change 
+##' with weight matrix optimizing the efficiency in 
+##' scaling factor estimation, 2023, The Annals of Applied Statistics.}
 ##' @examples
 ##' ## randomly generate a n * p matrix where n = 50, p = 100
 ##' Z <- matrix(rnorm(50 * 100), nrow = 50, 100)
