@@ -1,3 +1,9 @@
+# dacc 0.0-3
+
+## Minor changes
+
+* Added reference for the package
+
 # dacc 0.0-2
 
 ## Minor changes

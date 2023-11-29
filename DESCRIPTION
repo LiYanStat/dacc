@@ -10,8 +10,9 @@ Authors@R: c(
     person(given = "Jun", family = "Yan", role = "aut"))
 Description: 
     Conduct detection and attribution of climate change using methods including optimal fingerprinting via 
-    generalized total least squares or estimating equation. Provide shrinkage estimators for covariance 
-    matrix from Ledoit and Wolf (2004) <doi:10.1016/S0047-259X(03)00096-4>, and Ledoit and Wolf (2017) <doi:10.2139/ssrn.2383361>.
+    generalized total least squares or estimating equation approach from Ma et al. (2023) <doi:10.1175/JCLI-D-22-0681.1>. 
+    Provide shrinkage estimators for covariance matrix from Ledoit and Wolf (2004) <doi:10.1016/S0047-259X(03)00096-4>, 
+    and Ledoit and Wolf (2017) <doi:10.2139/ssrn.2383361>.
 Depends:
     R (>= 3.5.0)
 Imports:
