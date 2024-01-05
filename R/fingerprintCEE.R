@@ -177,6 +177,8 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
       t(t(X[, seq(i, (p - 1)*C + i, C), drop = FALSE]) %*% 
           solve(Sig[((i - 1)*ni + 1):(i*ni), ((i - 1)*ni + 1):(i*ni)]) %*% 
           ep[((i - 1)*ni + 1):(i*ni)] + ni*mv%*%beta.hat) %>% as.matrix})
+    ## solve the one demensional problem
+    G <- matrix(G, nrow = p, ncol = C)
     return(G)
   }
   if(p > 1){
@@ -206,8 +208,9 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                    })
     Gb <- apply(mblk, 2,
                 function(x) {
-                  rowSums(G_fun(Y.o[x, ] - X.o[x, ] %*% beta.hat))
+                  rowSums(G_fun(Y.o[x,] - X.o[x, ] %*% beta.hat))
                 })
+    Gb <- matrix(Gb, nrow = p, ncol = C)
     Bb <- cov(t(Gb))
   }
   Vsb <- A  %*% Bb %*% A
@@ -358,6 +361,8 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
           solve(remove_empty(which = c("rows", "cols"), dat = Sig[((i - 1) * ni + 1):(i * ni), ((i - 1) * ni + 1):(i * ni), drop = FALSE])) %*% 
           remove_empty(which = c("rows", "cols"), dat = matrix(ep[((i - 1) * ni + 1):(i * ni)])) +
           ni * mv %*% beta.hat) %>% as.matrix})
+    ## solve the one demensional problem
+    G <- matrix(G, nrow = p, ncol = C)
     return(G)
   }
   Gsb <- sapply(1:l2, function(x){
@@ -381,6 +386,7 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                 function(x) {
                   rowSums(G_fun(Y.o[x, ] - X.o[x, ]%*%beta.hat))
                 })
+    Gb <- matrix(Gb, nrow = p, ncol = C)
     Bb <- cov(t(Gb))
   }
   ## calculate the variance and confidence interval
