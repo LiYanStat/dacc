@@ -304,6 +304,8 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
 #### nB:         number of bootstrap replications.
 #### conf.level: confidence level.
 #### ridge:      coefficient for the shrinkage to handle missing value.
+
+## check the missing pattern
 eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C, 
                      ridge = 0, nB = 0, conf.level = 0.9) {
   ## check the missing value
