@@ -211,7 +211,7 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                 function(x) {
                   rowSums(G_fun(Y.o[x,] - X.o[x, ] %*% beta.hat))
                 })
-    Gb <- matrix(Gb, nrow = p, ncol = C)
+    Gb <- matrix(Gb, nrow = p, ncol = nB)
     Bb <- cov(t(Gb))
   }
   Vsb <- A  %*% Bb %*% A
@@ -387,7 +387,8 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                 function(x) {
                   rowSums(G_fun(Y.o[x, ] - X.o[x, ]%*%beta.hat))
                 })
-    Gb <- matrix(Gb, nrow = p, ncol = C)
+    ## fixed nB issue
+    Gb <- matrix(Gb, nrow = p, ncol = nB)
     Bb <- cov(t(Gb))
   }
   ## calculate the variance and confidence interval
