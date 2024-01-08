@@ -15,7 +15,8 @@
 ##' default same as ctlruns.1.
 ##' @param nS number of locations for the observed responses.
 ##' @param nT number of time steps for the observed responses.
-##' @param nB number of replicates in bootstrap.
+##' @param nB number of replicates in bootstrap for the bootstrapped variance and confidence 
+##' interval estimations.
 ##' @param conf.level confidence level for confidence interval estimation.
 ##' @param cal.a indicator for calculating the a value, otherwise use default value a = 1.
 ##' @param missing indicator for whether missing values present in Y.
@@ -25,8 +26,8 @@
 ##' variance, together with the residuals for model diagnostics.
 ##' @author Yan Li
 ##' @references \itemize{ 
-##' \item Sai etal, Optimal Fingerprinting with Estimating Equations, 2023, 
-##'       Journal of Climate.}
+##' \item Sai et al (2023), Optimal Fingerprinting with Estimating Equations,
+##'       \emph{Journal of Climate} 36(20), 7109–-7122.}
 ##' @examples
 ##' ## load the example dataset
 ##' data(simDat)
@@ -77,7 +78,7 @@ fingerprintCEE <- function(Xtilde, Y, mruns,
   if(missing) {
     ## if missing, do not calculate the a value
     output <- 
-      eefp_mis(Xt = Xtilde, Y = Y, m = mruns, 
+      eefp_mis(Xt = Xtilde, Y = Y, m = mruns,
                ctlruns1 = ctlruns.1, ctlruns2 = ctlruns.2,
                ni = nS, C = nT,
                ridge = ridge, nB = nB, conf.level = conf.level)

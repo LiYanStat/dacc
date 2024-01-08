@@ -11,17 +11,18 @@
 ##' default value are set to be list in (0.2, 0.5).
 ##' @return regularized estimate of covariance matrix.
 ##' @author Yan Li
-##' @keywords htest
-##' @references \itemize{ \item  Olivier Ledoit and Michael Wolf,
+##' @keywords variance estimation
+##' @references \itemize{ 
+##' \item  Olivier Ledoit and Michael Wolf (2004),
 ##' A well-conditioned estimator for large-dimensional 
-##' covariance matrices, 2004, JMA. 
-##' \item Olivier Ledoit and Michael Wolf, 
+##' covariance matrices, \emph{Journal of multivariate analysis}, 88(2), 365--411.
+##' \item Olivier Ledoit and Michael Wolf (2017), 
 ##' Direct nonlinear shrinkage estimation of 
-##' large-dimensional covariance matrices, Working Paper No. 264, UZH.
-##' \item Li et al,
+##' large-dimensional covariance matrices, \emph{Working Paper No. 264, UZH}.
+##' \item Li et al (2023),
 ##' Regularized fingerprinting in detection and attribution of climate change 
 ##' with weight matrix optimizing the efficiency in 
-##' scaling factor estimation, 2023, The Annals of Applied Statistics.}
+##' scaling factor estimation, \emph{Ann. Appl. Stat.} 17(1), 225--239.}
 ##' @examples
 ##' ## randomly generate a n * p matrix where n = 50, p = 100
 ##' Z <- matrix(rnorm(50 * 100), nrow = 50, 100)

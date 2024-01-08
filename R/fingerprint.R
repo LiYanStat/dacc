@@ -27,13 +27,13 @@
 ##' @author Yan Li
 ##' @keywords regression tls fingerprinting
 ##' @references \itemize{ 
-##' \item  Gleser, Estimation in a Multivariate "Errors in Variables" 
-##' Regression Model: Large Sample Results, 1981, Ann. Stat.
-##' \item Golub and Laon, An Analysis of the Total Least Squares Problem,
-##' 1980, SIAM J. Numer. Anal.
-##' \item Pesta, Total least squares and bootstrapping with 
-##' applications in calibration, 2012, Statistics.
-##' \item Li et al, Uncertainty in Optimal Fingerprinting is Underestimated, 2021.}
+##' \item  Gleser (1981), Estimation in a Multivariate "Errors in Variables" 
+##' Regression Model: Large Sample Results, \emph{Ann. Stat.} 9(1) 24--44.
+##' \item Golub and Laon (1980), An Analysis of the Total Least Squares Problem,
+##' \emph{SIAM J. Numer. Anal}. 17(6) 883--893.
+##' \item Pesta (2012), Total least squares and bootstrapping with 
+##' applications in calibration, \emph{Statistics} 47(5), 966--991.
+##' \item Li et al (2021), Uncertainty in Optimal Fingerprinting is Underestimated, \emph{Environ. Res. Lett.} 16(8) 084043.}
 ##' @examples
 ##' data(simDat)
 ##' ## set the true covariance matrix and expected pattern
