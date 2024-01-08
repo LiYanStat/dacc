@@ -193,8 +193,8 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
     })
     Bsb <- c(1/a + mv * beta.hat^2) * var(Gsb)
   }
-  Bb <- Bsb
   ## bootstrap to calculate the Variance if nB > 0
+  Bb <- Bsb
   if(nB > 0) {
     l <- 2
     mblk <- sapply(1:nB,
@@ -214,15 +214,21 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
     Gb <- matrix(Gb, nrow = p, ncol = nB)
     Bb <- cov(t(Gb))
   }
+  norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
+  ## bootstrapped results
   Vsb <- A  %*% Bb %*% A
-  Vb <- A  %*% Bsb %*% A
-  sd_sb <- sqrt(diag(A  %*% Bb %*% A))
-  sd_b <- sqrt(diag(A  %*% Bsb %*% A))
-  norm.crt <- qnorm(1 - (1 - conf.level)/2)
+  sd_sb <- sqrt(diag(Vsb))
+  # sd_sb <- sqrt(diag(A  %*% Bb %*% A))
   ci_sb <- cbind(beta.hat - norm.crt * sd_sb,
-                 beta.hat + norm.crt * sd_sb)  
+                 beta.hat + norm.crt * sd_sb)
+  
+  ## approximated variance and confidence interval estimations
+  Vb <- A  %*% Bsb %*% A
+  sd_b <- sqrt(diag(Vb))
+  # sd_b <- sqrt(diag(A  %*% Bsb %*% A))
   ci_b <- cbind(beta.hat - norm.crt * sd_b,
                 beta.hat + norm.crt * sd_b)
+  
   ## calculate CI of a
   if(length(m) > 1){
     dotQ_t <- lapply(1:C, function(i){
@@ -271,8 +277,8 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
   Xlab <- paste0("X", 1:numbeta)
   if (nB > 0){
     result <- list(beta = as.vector(beta.hat),  ## point estimate
-                   var = Vsb, ci = ci_sb,  ## variance and CI
-                   var.boot = Vb, ci.boot = ci_b,  ## bootstrapped variance and CI
+                   var = Vb, ci = ci_b,  ## variance and CI
+                   var.boot = Vsb, ci.boot = ci_sb,  ## bootstrapped variance and CI
                    a = a, sd.a = sd_a, ci.a = ci_a,  ## p-value and ci for testing alpha = 1
                    p.value.a = p_test_a,
                    residuals = c(res), residuals.prewhit = res_pwh)  ## residuals and pre-whitened residuals
@@ -281,7 +287,7 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
     colnames(result$ci.boot) <- c("Lower bound", "Upper bound")
   } else {
     result <- list(beta = as.vector(beta.hat),
-                   var = Vsb, ci = ci_sb,
+                   var = Vb, ci = ci_b,  ## approximated var and CI
                    a = a, sd.a = sd_a, ci.a = ci_a,
                    p.value.a = p_test_a,
                    residuals = c(res), residuals.prewhit = res_pwh)
@@ -370,6 +376,7 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
     rowSums(G_fun(ctlruns2[x, ]))
   })
   Bsb <- c(1 + diag(mv) %*% beta.hat^2) * cov(t(Gsb))
+  ## bootstrap to calculate the Variance if nB > 0
   Bb <- Bsb
   if(nB > 0) {
     l <- 2
@@ -391,14 +398,18 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
     Gb <- matrix(Gb, nrow = p, ncol = nB)
     Bb <- cov(t(Gb))
   }
-  ## calculate the variance and confidence interval
+  norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
+  ## bootstrapped results
   Vsb <- A  %*% Bb %*% A
-  Vb <- A  %*% Bsb %*% A
-  sd_sb <- sqrt(diag(A  %*% Bb %*% A))
-  sd_b <- sqrt(diag(A  %*% Bsb %*% A))
-  norm.crt <- qnorm(1 - (1 - conf.level)/2)
+  sd_sb <- sqrt(diag(Vsb))
+  # sd_sb <- sqrt(diag(A  %*% Bb %*% A))
   ci_sb <- cbind(beta.hat - norm.crt * sd_sb,
-                 beta.hat + norm.crt * sd_sb)  
+                 beta.hat + norm.crt * sd_sb)
+  
+  ## approximated variance and confidence interval estimations
+  Vb <- A  %*% Bsb %*% A
+  sd_b <- sqrt(diag(Vb))
+  # sd_b <- sqrt(diag(A  %*% Bsb %*% A))
   ci_b <- cbind(beta.hat - norm.crt * sd_b,
                 beta.hat + norm.crt * sd_b)
   ## summarize the results as a list
@@ -406,14 +417,14 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
   Xlab <- paste0("X", 1:numbeta)
   if (nB > 0){
     result <- list(beta = as.vector(beta.hat),  ## point estimate
-                   var = Vsb, ci = ci_sb,  ## variance and CI
-                   var.boot = Vb, ci.boot = ci_b)  ## bootstrapped variance and CI
+                   var = Vb, ci = ci_b,  ## variance and CI
+                   var.boot = Vsb, ci.boot = ci_sb)  ## bootstrapped variance and CI
     rownames(result$var.boot) <- colnames(result$var.boot) <- Xlab
     rownames(result$ci.boot) <- Xlab
     colnames(result$ci.boot) <- c("Lower bound", "Upper bound")
   } else {
     result <- list(beta = as.vector(beta.hat),
-                   var = Vsb, ci = ci_sb)
+                   var = Vb, ci = ci_b)
   }
   ## rename the results
   names(result$beta) <- Xlab
