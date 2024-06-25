@@ -1,3 +1,9 @@
+# dacc 0.0-4
+
+* Added a dataset for global mean temperature
+
+* Updated the main function fingerprint() to include different methods and fix name of inputs
+
 # dacc 0.0-3
 
 ## Minor changes
