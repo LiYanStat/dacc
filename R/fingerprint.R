@@ -54,7 +54,7 @@
 ##' ## generate the forcing responses
 ##' mruns <- c(1, 1)
 ##' Xtilde <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov / mruns[1]),
-##'                 MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov / mruns[2]))
+##'                MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov / mruns[2]))
 ##' ## control runs
 ##' ctlruns <- MASS::mvrnorm(100, mu = rep(0, nrow(Cov)), Sigma = Cov)
 ##' ## ctlruns.sigma for the point estimation and ctlruns.bhvar for the interval estimation
@@ -66,12 +66,12 @@
 ##' 
 ##' ## call the function to estimate the signal factors via EE
 ##' fingerprint(Xtilde, Y, mruns,
-##'             ctlruns.sigma, ctlruns.bhvar,
-##'             S, T, B = 10,
-##'             method = "EE",
-##'             conf.level = 0.9,
-##'             cal.a = TRUE,
-##'             missing = FALSE, ridge = 0)
+##'           ctlruns.sigma, ctlruns.bhvar,
+##'           S, T, B = 10,
+##'           method = "EE",
+##'           conf.level = 0.9,
+##'           cal.a = TRUE,
+##'           missing = FALSE, ridge = 0)
 ##' @import magrittr
 ##' @importFrom MASS mvrnorm
 ##' @importFrom stats cov qnorm quantile sd var pnorm
@@ -100,6 +100,18 @@ fingerprint <- function(Xtilde, Y, mruns,
   }
   ## for the EE method
   if(method == "EE") {
+    ## check the missing value
+    if(any(is.na(Y))) {
+      if(!missing) {
+        message("missing values in observations")
+      }
+      missing <- TRUE
+    } else {
+      if(missing) {
+        message("no missing values in observations")
+      }
+      missing <- FALSE
+    }
     output <- fingerprintCEE(
       Xtilde = Xtilde, Y = Y, mruns = mruns,
       ctlruns.1 = ctlruns.sigma, 
