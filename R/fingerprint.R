@@ -4,7 +4,7 @@
 ##' interval via the estimating equation or total least squares.
 ##'
 ##' @param Xtilde \eqn{n \times p} matrix, signal pattern to be detected.
-##' @param Y \eqn{n \times 1} matrix, length \eqn{nS \times nT}, observed climate variable.
+##' @param Y \eqn{n \times 1} matrix, length \eqn{S \times T}, observed climate variable.
 ##' @param mruns number of ensembles to estimate the corresponding pattern. 
 ##' It is used as the scale of the covariance matrix for \eqn{X_i}.
 ##' @param ctlruns.sigma \eqn{m \times n} matrix, a group of \eqn{m} independent control 
@@ -97,10 +97,6 @@ fingerprint <- function(Xtilde, Y, mruns,
   }
   if(is.null(colnames(Xtilde))) {
     colnames(Xtilde) <- paste0("forcings ", 1:ncol(Xtilde))
-  }
-  ## get the covariance matrix estimation for PBC and TS using 
-  if(method != "EE") {
-
   }
   ## for the EE method
   if(method == "EE") {

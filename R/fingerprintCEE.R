@@ -37,7 +37,7 @@ fingerprintCEE <- function(Xtilde, Y, mruns,
                            ridge = 0) {
   ## check whether there is missing value in the response
   output <- NULL
-  if(missing) {
+  if(missing | any(is.na(Y))) {
     ## if missing, do not calculate the a value
     output <- 
       eefp_mis(Xt = Xtilde, Y = Y, m = mruns,
