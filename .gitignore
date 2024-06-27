@@ -1,9 +1,9 @@
 *.Rproj.user
-*.Rproj
-.Rhistory
+*.Rproj*.Rapp.history
+*.Rhistory
 *.tar.gz
 reference
 *.Rcheck/
 *.*~
 *~
-.DS_Store
+*.DS_Store

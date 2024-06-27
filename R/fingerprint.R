@@ -78,6 +78,7 @@
 ##' @importFrom utils tail
 ##' @importFrom pracma ceil
 ##' @importFrom janitor remove_empty
+##' @importFrom grDevices boxplot.stats
 ##' @export fingerprint
 
 fingerprint <- function(Xtilde, Y, mruns, 
@@ -129,7 +130,6 @@ fingerprint <- function(Xtilde, Y, mruns,
     } else {
       stop("Unknow method for covariance matrix estimation")
     }
-    
     if(missing) {
       ## check the missing value
       nomis <- which(!is.na(Y))
@@ -149,10 +149,14 @@ fingerprint <- function(Xtilde, Y, mruns,
     }
     ## for the two sample approach
     if(method == "TS") {
-      output <- "under construction"
+      output <- fingerprintTS(X = Xtilde[nomis, , drop = FALSE],
+                              Y = Y[nomis, , drop = FALSE],
+                              nruns.X = mruns, cov = cov[nomis, nomis, drop = FALSE],
+                              Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
+                              precision = FALSE,
+                              conf.level = 0.90)
     }
   }
-  
   ## return the output
   return(output)
 }

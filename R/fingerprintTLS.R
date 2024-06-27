@@ -65,13 +65,20 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
   beta.hat <- as.vector(output$beta.hat)
   ci.estim <- output$ci
   sd.estim <- output$sd
-  ## names label of results
-  names(beta.hat) <- colnames(X)
-  rownames(ci.estim) <- c(paste0("B: ", colnames(X)), 
-                          paste0("N: ", colnames(X)))
-  colnames(ci.estim) <- paste0(c("lower ", "upper "), c((1 - conf.level) / 2, (1 + conf.level) / 2) * 100, "%")
+  
+  ## label the cols and rows of the estimation
+  numbeta <- length(beta.hat)
+  if(is.null(colnames(X))) {
+    Xlab <- paste0("forcings ", 1:numbeta)
+  } else {
+    Xlab <- colnames(X)
+  }
+  names(beta.hat) <- Xlab
+  rownames(ci.estim) <- c(paste0("B: ", Xlab), 
+                          paste0("N: ", Xlab))
+  colnames(ci.estim) <- paste0(c("Lower ", "Upper "), c((1 - conf.level) / 2, (1 + conf.level) / 2) * 100, "%")
   rownames(sd.estim) <- c("B", "N")
-  colnames(sd.estim) <- colnames(X)
+  colnames(sd.estim) <- Xlab
   
   if (conf.method == "TSB" | conf.method == "both") {
     boot <- lapply(1:B,
@@ -141,12 +148,12 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
                      beta.hat + Z.crt * TSB.sd)
     ci.estim <- rbind(ci.estim, ci.TSBv)
     ## confidence interval
-    rownames(ci.estim) <- c(paste0("B: ", colnames(X)), 
-                            paste0("N: ", colnames(X)),
-                            paste0("FSB: ", colnames(X)), 
-                            paste0("TSB: ", colnames(X)), 
-                            paste0("TSBv: ", colnames(X)))
-    colnames(sd.estim) <- colnames(X)
+    rownames(ci.estim) <- c(paste0("B: ", Xlab), 
+                            paste0("N: ", Xlab),
+                            paste0("FSB: ", Xlab), 
+                            paste0("TSB: ", Xlab), 
+                            paste0("TSBv: ", Xlab))
+    colnames(sd.estim) <- Xlab
     rownames(sd.estim) <- c("B",
                             "N", 
                             "FSB", 
@@ -199,14 +206,14 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
   
   ## collect the output
   if(conf.method %in% c("PBC", "both")) {
-    result <- list(coefficient = beta.hat,
-                   confidence.interval = ci.estim, 
-                   var.est = sd.estim, 
+    result <- list(beta = beta.hat,
+                   ci = ci.estim, 
+                   var = sd.estim, 
                    pbc.ratio = ratio)
   } else {
-    result <- list(coefficient = beta.hat,
-                   confidence.interval = ci.estim, 
-                   var.est = sd.estim)
+    result <- list(beta = beta.hat,
+                   ci = ci.estim, 
+                   var = sd.estim)
   }
   result
 }
