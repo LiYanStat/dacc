@@ -237,7 +237,7 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                 a + norm.crt * sd_a)
   ## return the point estimate and confidence interval results as a list
   numbeta <- length(beta.hat)
-  if(is.null(colnames(X))) {
+  if(is.null(colnames(Xt))) {
     Xlab <- paste0("forcings ", 1:numbeta)
   } else {
     Xlab <- colnames(Xt)
@@ -427,7 +427,7 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                 beta.hat + norm.crt * sd_b)
   ## summarize the results as a list
   numbeta <- length(beta.hat)
-  if(is.null(colnames(X))) {
+  if(is.null(colnames(Xt))) {
     Xlab <- paste0("forcings ", 1:numbeta)
   } else {
     Xlab <- colnames(Xt)
