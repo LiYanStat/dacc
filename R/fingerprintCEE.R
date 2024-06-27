@@ -240,7 +240,7 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
   if(is.null(colnames(X))) {
     Xlab <- paste0("forcings ", 1:numbeta)
   } else {
-    Xlab <- colnames(X)
+    Xlab <- colnames(Xt)
   }
   if (nB > 0){
     result <- list(beta = as.vector(beta.hat),  ## point estimate
@@ -430,7 +430,7 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
   if(is.null(colnames(X))) {
     Xlab <- paste0("forcings ", 1:numbeta)
   } else {
-    Xlab <- colnames(X)
+    Xlab <- colnames(Xt)
   }
   if (nB > 0){
     result <- list(beta = as.vector(beta.hat),  ## point estimate
