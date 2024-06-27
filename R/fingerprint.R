@@ -154,7 +154,8 @@ fingerprint <- function(Xtilde, Y, mruns,
                               nruns.X = mruns, cov = cov[nomis, nomis, drop = FALSE],
                               Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
                               precision = FALSE,
-                              conf.level = 0.90)
+                              conf.level = conf.level,
+                              B = B)
     }
   }
   ## return the output

@@ -1,6 +1,7 @@
 ###### internal function for the two sample approach
 
-fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level = 0.90) {
+fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level = 0.90, 
+                          B = 1000) {
   ## Z.2 is the second sample for the variance estimation
   X <- as.matrix(X)
   if (! precision) {
@@ -15,7 +16,7 @@ fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level
   }
   
   ## compute the estimation using internal function tlsLm
-  output <- tlsLmTS(cov.sinv %*% X, cov.sinv %*% Y, nruns.X, conf.level, Z.2, cov.sinv)
+  output <- tlsLmTS(cov.sinv %*% X, cov.sinv %*% Y, nruns.X, conf.level, Z.2, cov.sinv, B)
   beta.hat <- output$beta.hat
   ci.estim <- output$ci
   sd.estim <- output$sd
@@ -43,7 +44,7 @@ fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level
 }
 
 ## estimate via Total least square approach
-tlsLmTS <- function(X, Y, nruns.X, conf.level, Z.2, cov.sinv) {
+tlsLmTS <- function(X, Y, nruns.X, conf.level, Z.2, cov.sinv, B) {
   ## input: 
   ##   X: n*k matrix, including k predictors
   ##   Y: n*1 matrix, the observations
@@ -136,7 +137,7 @@ tlsLmTS <- function(X, Y, nruns.X, conf.level, Z.2, cov.sinv) {
   sd.norm <- sqrt(var.hat)
   
   ## compute the confidence interval from bootstrap
-  B <- 1000
+  ## B <- 1000
   ## nonparamatric bootstrap
   ## error control with tryCatch function
   for(i in 1:10) {
