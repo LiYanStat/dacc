@@ -34,6 +34,7 @@
 ##' \item Pesta (2012), Total least squares and bootstrapping with 
 ##' applications in calibration, \emph{Statistics} 47(5), 966--991.
 ##' \item Li et al (2021), Uncertainty in Optimal Fingerprinting is Underestimated, \emph{Environ. Res. Lett.} 16(8) 084043.}
+##' @noRd
 
 fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
                            precision = FALSE,

@@ -28,6 +28,7 @@
 ##' @references \itemize{ 
 ##' \item Sai et al (2023), Optimal Fingerprinting with Estimating Equations,
 ##'       \emph{Journal of Climate} 36(20), 7109–-7122.}
+##' @noRd
 
 fingerprintCEE <- function(Xtilde, Y, mruns,
                            ctlruns.1, ctlruns.2,
@@ -301,7 +302,7 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
 # eefp_mis(Xt, Y, m,
 #          ctlruns1, ctlruns2,
 #          ni, C,
-#          ridge, nB, conf.level)
+#          ridge, nB = 100, conf.level)
 
 
 ## check the missing pattern
