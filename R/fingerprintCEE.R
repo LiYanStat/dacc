@@ -281,6 +281,29 @@ eefp <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
 #### conf.level: confidence level.
 #### ridge:      coefficient for the shrinkage to handle missing value.
 
+# Xt <- Xtilde
+# Y <- Y
+# m <- nruns.X[c("ANT", "NAT")]
+# 
+# ctlruns1 <- ctlruns2 <- ctlruns
+# ni <- 54
+# C <- 13
+# 
+# ridge = 0; nB = 5; conf.level = 0.9
+# 
+# library(magrittr)
+# library(MASS)
+# library(stats)
+# library(utils)
+# library(pracma)
+# library(janitor)
+# 
+# eefp_mis(Xt, Y, m,
+#          ctlruns1, ctlruns2,
+#          ni, C,
+#          ridge, nB, conf.level)
+
+
 ## check the missing pattern
 eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C, 
                      ridge = 0, nB = 0, conf.level = 0.9) {
@@ -330,10 +353,11 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
   G_fun <- function(ep){
     ep[mis] <- NA
     G <- sapply(1:C, function(i){
-      t(t(remove_empty(which = c("rows", "cols"), dat = X[, seq(i, (p - 1) * C + i, C), drop = FALSE])) %*% 
-          solve(remove_empty(which = c("rows", "cols"), dat = Sig[((i - 1) * ni + 1):(i * ni), ((i - 1) * ni + 1):(i * ni), drop = FALSE])) %*% 
-          remove_empty(which = c("rows", "cols"), dat = matrix(ep[((i - 1) * ni + 1):(i * ni)])) +
-          ni * mv %*% beta.hat) %>% as.matrix})
+      t(t(remove_empty(which = c("rows", "cols"), dat = X[, seq(i, (p - 1) * C + i, C), drop = FALSE])) %*%
+            solve(remove_empty(which = c("rows", "cols"), dat = Sig[((i - 1) * ni + 1):(i * ni), ((i - 1) * ni + 1):(i * ni), drop = FALSE])) %*%
+            remove_empty(which = c("rows", "cols"), dat = matrix(ep[((i - 1) * ni + 1):(i * ni)])) +
+            ni * mv %*% beta.hat) %>% as.matrix
+      })
     ## solve the one demensional problem
     G <- matrix(G, nrow = p, ncol = C)
     return(G)
@@ -356,9 +380,31 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                      idx3 <- -c(outer((ni - 1):0, idx2*ni, "-"))
                      return(idx3)
                    })
+    
+    G_fun_boot <- function(ep){
+      ep[mis] <- NA
+      G <- sapply(1:C, function(i){
+          tryCatch({
+            t(t(remove_empty(which = c("rows", "cols"), dat = X[, seq(i, (p - 1) * C + i, C), drop = FALSE])) %*%
+                solve(remove_empty(which = c("rows", "cols"), dat = Sig[((i - 1) * ni + 1):(i * ni), ((i - 1) * ni + 1):(i * ni), drop = FALSE])) %*%
+                remove_empty(which = c("rows", "cols"), dat = matrix(ep[((i - 1) * ni + 1):(i * ni)])) +
+                ni * mv %*% beta.hat) %>% as.matrix
+          }, error = function(e){
+            epmis <- which(is.na(ep[((i - 1) * ni + 1):(i * ni)]))
+            t(t(X[-epmis, seq(i, (p - 1) * C + i, C), drop = FALSE]) %*%
+                solve(Sig[((i - 1) * ni + 1):(i * ni), ((i - 1) * ni + 1):(i * ni), drop = FALSE][-epmis, -epmis, drop = FALSE]) %*%
+                matrix(ep[((i - 1) * ni + 1):(i * ni)][-epmis]) +
+                ni * mv %*% beta.hat) %>% as.matrix
+          })
+      })
+      ## solve the one demensional problem
+      G <- matrix(G, nrow = p, ncol = C)
+      return(G)
+    }
+    
     Gb <- apply(mblk, 2,
                 function(x) {
-                  rowSums(G_fun(Y.o[x, ] - X.o[x, ]%*%beta.hat))
+                    rowSums(G_fun_boot(Y.o[x, ] - X.o[x, ] %*% beta.hat), na.rm = TRUE)
                 })
     ## fixed nB issue
     Gb <- matrix(Gb, nrow = p, ncol = nB)
