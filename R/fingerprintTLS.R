@@ -36,6 +36,25 @@
 ##' \item Li et al (2021), Uncertainty in Optimal Fingerprinting is Underestimated, \emph{Environ. Res. Lett.} 16(8) 084043.}
 ##' @noRd
 
+
+data(globalDat)
+## help document for the dataset
+## help(globalDat)
+attach(globalDat)
+
+nomis <- which(!is.na(Y))
+X <- Xtilde[nomis, , drop = FALSE] 
+Y <- Y[nomis, , drop = FALSE]
+cov <- cov[nomis, nomis, drop = FALSE]
+nruns.X <- nruns.X[c("ANT", "NAT")]
+ctlruns <- ctlruns[, nomis, drop = FALSE]
+precision <- FALSE
+conf.level <- 0.9
+conf.method = "PBC"
+cov.method <- "l2"
+
+
+
 fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
                            precision = FALSE,
                            conf.level = 0.90,
@@ -174,7 +193,7 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
     out.beta <- out.var <- NULL
     for (i in 1:B) {
       ## generate new dataset
-      for(er in 1:500) {
+      for(er in 1:50) {
         tmp.new <- tryCatch({
           Y.new <- MASS::mvrnorm(n = 1, mu = output[, "Y"], Sigma = cov)
           X.new <- NULL
@@ -197,8 +216,8 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
           break
         }
       }
-      out.beta <- rbind(out.beta, tmp.new$coefficient)
-      out.var <- rbind(out.var, as.vector(tmp.new$var.est))
+      out.beta <- rbind(out.beta, tmp.new$beta)
+      out.var <- rbind(out.var, as.vector(tmp.new$var))
     }
     ## return the ratio for the parametric calibration bootstrap
     ratio <- rbind(apply(out.beta, 2, sd), apply(out.beta, 2, sd)) / matrix(colMeans(out.var, na.rm = TRUE), nrow = 2)
@@ -423,8 +442,6 @@ tlsLm.boot <- function(X, Y, nruns.X, B = 100) {
   
   list(beta.s.list = beta.s, beta.s = Estls(X, Y, Dn.X)$beta.hat)
 }
-
-
 
 ## get the fitted expected response X and Y of the data
 tlsFit <- function(X, Y, nruns.X) {
