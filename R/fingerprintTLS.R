@@ -36,25 +36,6 @@
 ##' \item Li et al (2021), Uncertainty in Optimal Fingerprinting is Underestimated, \emph{Environ. Res. Lett.} 16(8) 084043.}
 ##' @noRd
 
-
-data(globalDat)
-## help document for the dataset
-## help(globalDat)
-attach(globalDat)
-
-nomis <- which(!is.na(Y))
-X <- Xtilde[nomis, , drop = FALSE] 
-Y <- Y[nomis, , drop = FALSE]
-cov <- cov[nomis, nomis, drop = FALSE]
-nruns.X <- nruns.X[c("ANT", "NAT")]
-ctlruns <- ctlruns[, nomis, drop = FALSE]
-precision <- FALSE
-conf.level <- 0.9
-conf.method = "PBC"
-cov.method <- "l2"
-
-
-
 fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
                            precision = FALSE,
                            conf.level = 0.90,
