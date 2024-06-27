@@ -427,7 +427,11 @@ eefp_mis <- function(Xt, Y, m, ctlruns1, ctlruns2, ni, C,
                 beta.hat + norm.crt * sd_b)
   ## summarize the results as a list
   numbeta <- length(beta.hat)
-  Xlab <- paste0("X", 1:numbeta)
+  if(is.null(colnames(X))) {
+    Xlab <- paste0("forcings ", 1:numbeta)
+  } else {
+    Xlab <- colnames(X)
+  }
   if (nB > 0){
     result <- list(beta = as.vector(beta.hat),  ## point estimate
                    var = Vb, ci = ci_b,  ## variance and CI
