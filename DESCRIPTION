@@ -16,7 +16,7 @@ Description:
 Depends:
     R (>= 3.5.0)
 Imports:
-    MASS, stats, utils, Iso, pracma, janitor, magrittr
+    MASS, stats, utils, Iso, pracma, janitor, magrittr, sp, CFtime, ncdf4
 License: GPL (>= 3)
 Encoding: UTF-8
 URL: https://github.com/LiYanStat/dacc
