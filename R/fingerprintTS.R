@@ -33,6 +33,7 @@ fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level
   rownames(sd.estim) <- c("B", "N")
   colnames(sd.estim) <- Xlab
   
+  beta.hat <- as.vector(beta.hat)
   names(beta.hat) <- Xlab
   ## combine the results
   result <- list(beta = beta.hat,
