@@ -76,7 +76,7 @@ fpPrep <- function(datafile, variable, region = "GL", target.year,
   }
   
   ## get the region
-  if(region == "GL") {
+  if(region[1] == "GL") {
     if(is.null(regridding)) {
       region <- rbind(c(-180, -90),
                       c(-180, 90),
