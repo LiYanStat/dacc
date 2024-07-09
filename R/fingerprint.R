@@ -15,7 +15,8 @@
 ##' in EE or PBC approach should be same as ctlruns.sigma.
 ##' @param S number of locations for the observed responses.
 ##' @param T number of time steps for the observed responses.
-##' @param B number of replicates in bootstrap procedure.
+##' @param B number of replicates in bootstrap procedure, mainly for the PBC and TS methods, can be 
+##' specified in "EE" method but not necessary. By default B = 0 as the default method is "EE".
 ##' @param method for estimating the scaling factors and corresponding confidence interval
 ##' @param cov.method method for estimation of covariance matrix in confidence 
 ##' interval estimation of PBC method. (only for PBC method)
@@ -67,7 +68,8 @@
 ##' ## call the function to estimate the signal factors via EE
 ##' fingerprint(Xtilde, Y, mruns,
 ##'           ctlruns.sigma, ctlruns.bhvar,
-##'           S, T, B = 10,
+##'           S, T,
+##'           ## B = 0, by default
 ##'           method = "EE",
 ##'           conf.level = 0.9,
 ##'           cal.a = TRUE,
@@ -83,7 +85,7 @@
 
 fingerprint <- function(Xtilde, Y, mruns, 
                         ctlruns.sigma, ctlruns.bhvar,
-                        S, T, B,
+                        S, T, B = 0,
                         method = c("EE", "PBC", "TS"),
                         cov.method = c("l2", "mv"),
                         conf.level = 0.90,
