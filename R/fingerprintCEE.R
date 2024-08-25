@@ -32,6 +32,7 @@
 
 fingerprintCEE <- function(Xtilde, Y, mruns,
                            ctlruns.1, ctlruns.2,
+                           Proj = diag(ncol(Xtilde)),
                            nS, nT, nB = 0,
                            conf.level = 0.9,
                            cal.a = TRUE, missing = FALSE,
@@ -41,7 +42,7 @@ fingerprintCEE <- function(Xtilde, Y, mruns,
   if(missing) {
     ## if missing, do not calculate the a value
     output <- 
-      eefp_mis(Xt = Xtilde, Y = Y, m = mruns,
+      eefp_mis(Xt = Xtilde, Y = Y, m = mruns, 
                ctlruns1 = ctlruns.1, ctlruns2 = ctlruns.2,
                ni = nS, C = nT,
                ridge = ridge, nB = nB, conf.level = conf.level)
@@ -51,6 +52,31 @@ fingerprintCEE <- function(Xtilde, Y, mruns,
            ctlruns1 = ctlruns.1, ctlruns2 = ctlruns.2,
            ni = nS, C = nT,
            nB = nB, conf.level = conf.level, cal_a = cal.a)
+  }
+  ## handling the projection matrix
+  if(any(Proj != diag(Xtilde))) {
+    ## estimation
+    beta.Proj <- Proj %*% as.vector(output$beta)
+    var.Proj <- Proj %*% output$var %*% t(Proj)
+    sd.Proj <- sqrt(diag(output$var))
+    ## confidence interval
+    norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
+    ci.Proj <- cbind(beta.Proj - norm.crt * sd.Proj,
+                     beta.Proj + norm.crt * sd.Proj)
+    ## summarize the results
+    output$beta.Proj <- beta.Proj
+    output$var.Proj <- var.Proj
+    output$ci.Proj <- ci.Proj
+    ## rename the results
+    if(is.null(rownames(Proj))) {
+      Xlab <- paste0("forcings ", 1:ncol(Xtilde))
+    } else {
+      Xlab <- rownames(Proj)
+    }
+    names(output$beta.Proj) <- Xlab
+    rownames(output$var.Proj) <- colnames(output$var.Proj) <- Xlab
+    rownames(output$ci.Proj) <- Xlab
+    colnames(output$ci.Proj) <- c("Lower bound", "Upper bound")
   }
   return(output)
 }

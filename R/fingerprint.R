@@ -17,9 +17,12 @@
 ##' @param T number of time steps for the observed responses.
 ##' @param B number of replicates in bootstrap procedure, mainly for the PBC and TS methods, can be 
 ##' specified in "EE" method but not necessary. By default B = 0 as the default method is "EE".
+##' @param Proj The projection matrix for computing for scaling factors of other external forcings 
+##' with the current input when using EE. For example, when ALL and NAT are used for modeling, 
+##' specifying the Proj matrix to return the results for ANT and NAT.
 ##' @param method for estimating the scaling factors and corresponding confidence interval
 ##' @param cov.method method for estimation of covariance matrix in confidence 
-##' interval estimation of PBC method. (only for PBC method)
+##' interval estimation of PBC method. (only for PBC method).
 ##' @param conf.level confidence level for confidence interval estimation.
 ##' @param missing indicator for whether missing values present in Y.
 ##' @param cal.a indicator for calculating the a value, otherwise use default value a = 1. (only for EE method)
@@ -86,6 +89,7 @@
 fingerprint <- function(Xtilde, Y, mruns, 
                         ctlruns.sigma, ctlruns.bhvar,
                         S, T, B = 0,
+                        Proj = diag(ncol(Xtilde)),
                         method = c("EE", "PBC", "TS"),
                         cov.method = c("l2", "mv"),
                         conf.level = 0.90,
@@ -119,6 +123,7 @@ fingerprint <- function(Xtilde, Y, mruns,
       Xtilde = Xtilde, Y = Y, mruns = mruns,
       ctlruns.1 = ctlruns.sigma, 
       ctlruns.2 = ctlruns.bhvar,
+      Proj = Proj,
       nS = S, nT = T, nB = B,
       conf.level = conf.level,
       cal.a = cal.a, missing = missing,

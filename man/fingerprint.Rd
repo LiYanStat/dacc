@@ -13,6 +13,7 @@ fingerprint(
   S,
   T,
   B = 0,
+  Proj = diag(ncol(Xtilde)),
   method = c("EE", "PBC", "TS"),
   cov.method = c("l2", "mv"),
   conf.level = 0.9,
@@ -44,10 +45,14 @@ in EE or PBC approach should be same as ctlruns.sigma.}
 \item{B}{number of replicates in bootstrap procedure, mainly for the PBC and TS methods, can be 
 specified in "EE" method but not necessary. By default B = 0 as the default method is "EE".}
 
+\item{Proj}{The projection matrix for computing for scaling factors of other external forcings 
+with the current input when using EE. For example, when ALL and NAT are used for modeling, 
+specifying the Proj matrix to return the results for ANT and NAT.}
+
 \item{method}{for estimating the scaling factors and corresponding confidence interval}
 
 \item{cov.method}{method for estimation of covariance matrix in confidence 
-interval estimation of PBC method. (only for PBC method)}
+interval estimation of PBC method. (only for PBC method).}
 
 \item{conf.level}{confidence level for confidence interval estimation.}
 

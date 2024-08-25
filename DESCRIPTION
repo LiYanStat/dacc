@@ -1,7 +1,7 @@
 Package: dacc
 Title: Detection and Attribution Analysis of Climate Change
 Version: 0.0-5
-Date: 2024-07-09
+Date: 2024-08-25
 Authors@R: c(
     person(given = "Yan", family = "Li",
            email = "yan.4.li@uconn.edu",
