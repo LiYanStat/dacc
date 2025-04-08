@@ -54,7 +54,7 @@ fingerprintCEE <- function(Xtilde, Y, mruns,
            nB = nB, conf.level = conf.level, cal_a = cal.a)
   }
   ## handling the projection matrix
-  if(any(Proj != diag(Xtilde))) {
+  if(any(Proj != diag(ncol(Xtilde)))) {
     ## estimation
     beta.Proj <- Proj %*% as.vector(output$beta)
     var.Proj <- Proj %*% output$var %*% t(Proj)

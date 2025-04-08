@@ -1,3 +1,13 @@
+# dacc 0.0-7
+
+* Added an alternative two sample approach using the weight matrix from EE method
+
+* Fixed error in R code
+
+# dacc 0.0-6
+
+* Added Projection matrix for multiple way analysis with combined forcings
+
 # dacc 0.0-5
 
 * Fixed errors

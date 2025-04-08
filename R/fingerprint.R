@@ -90,7 +90,7 @@ fingerprint <- function(Xtilde, Y, mruns,
                         ctlruns.sigma, ctlruns.bhvar,
                         S, T, B = 0,
                         Proj = diag(ncol(Xtilde)),
-                        method = c("EE", "PBC", "TS"),
+                        method = c("EE", "PBC", "TS", "TS.TempSt"),
                         cov.method = c("l2", "mv"),
                         conf.level = 0.90,
                         missing = FALSE,
@@ -137,9 +137,12 @@ fingerprint <- function(Xtilde, Y, mruns,
     } else {
       stop("Unknow method for covariance matrix estimation")
     }
+    
     if(missing) {
       ## check the missing value
       nomis <- which(!is.na(Y))
+    } else {
+      nomis <- 1:length(Y)
     }
     ## for the PBC method
     if(method == "PBC") {
@@ -164,6 +167,65 @@ fingerprint <- function(Xtilde, Y, mruns,
                               conf.level = conf.level,
                               B = 1000)
     }
+    if(method == "TS.TempSt") {
+      # cov <- Covest(ctlruns.sigma, method = "l2")$output
+      ## check number of time steps, if C > 1, use the pooled data to estimate
+      ## the covariance matrix as a block diagonal matrix (a spatial-temporal covariance 
+      ## matrix with temporal independence).
+      if(T == 1){
+        cov <- lwRegcov(ctlruns.sigma)
+      } else {
+        if(S == 1) {
+          cov <- diag(T) %x% cov(t(poolDat(X = t(ctlruns.sigma), C = T, ni = S)))
+        } else {
+          cov <- diag(T) %x% lwRegcov(t(poolDat(X = t(ctlruns.sigma), C = T, ni = S)))
+        }
+      }
+      output <- fingerprintTS(X = Xtilde[nomis, , drop = FALSE],
+                              Y = Y[nomis, , drop = FALSE],
+                              nruns.X = mruns, cov = cov[nomis, nomis, drop = FALSE],
+                              Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
+                              precision = FALSE,
+                              conf.level = conf.level,
+                              B = 1000)
+    }
+    
+        ## handling the projection matrix
+    if(any(Proj != diag(Xtilde))) {
+      ## estimation
+      beta.Proj <- Proj %*% as.vector(output$beta)
+      var.Proj <- Proj %*% output$var %*% t(Proj)
+      sd.Proj <- sqrt(diag(output$var))
+      ## confidence interval
+      norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
+      ci.Proj <- cbind(beta.Proj - norm.crt * sd.Proj,
+                       beta.Proj + norm.crt * sd.Proj)
+      ## summarize the results
+      output$beta.Proj <- beta.Proj
+      output$var.Proj <- var.Proj
+      output$ci.Proj <- ci.Proj
+      ## rename the results
+      if(is.null(rownames(Proj))) {
+        Xlab <- paste0("forcings ", 1:ncol(Xtilde))
+      } else {
+        Xlab <- rownames(Proj)
+      }
+      names(output$beta.Proj) <- Xlab
+      rownames(output$var.Proj) <- colnames(output$var.Proj) <- Xlab
+      rownames(output$ci.Proj) <- Xlab
+      colnames(output$ci.Proj) <- c("Lower bound", "Upper bound")
+    }
+    # 
+    # ## combine the results
+    # result <- list(beta = beta.hat,
+    #                var = sd.estim,
+    #                ci = ci.estim)
+    # 
+    # result <- list(beta = beta.hat,
+    #                ci = ci.estim, 
+    #                var = sd.estim, 
+    #                pbc.ratio = ratio)
+
   }
   ## return the output
   return(output)

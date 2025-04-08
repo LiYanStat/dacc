@@ -16,7 +16,8 @@ fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level
   }
   
   ## compute the estimation using internal function tlsLm
-  output <- tlsLmTS(cov.sinv %*% X, cov.sinv %*% Y, nruns.X, conf.level, Z.2, cov.sinv, B)
+  output <- tlsLmTS(cov.sinv %*% X, cov.sinv %*% Y, nruns.X,
+                    conf.level, Z.2, cov.sinv, B)
   beta.hat <- output$beta.hat
   ci.estim <- output$ci
   sd.estim <- output$sd

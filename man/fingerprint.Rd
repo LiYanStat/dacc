@@ -14,7 +14,7 @@ fingerprint(
   T,
   B = 0,
   Proj = diag(ncol(Xtilde)),
-  method = c("EE", "PBC", "TS"),
+  method = c("EE", "PBC", "TS", "TS.TempSt"),
   cov.method = c("l2", "mv"),
   conf.level = 0.9,
   missing = FALSE,
