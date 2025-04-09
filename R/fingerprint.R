@@ -99,7 +99,7 @@ fingerprint <- function(Xtilde, Y, mruns,
   Xtilde <- as.matrix(Xtilde)
   method <- match.arg(method)  ## method for the estimating procedure
   cov.method <- match.arg(cov.method)  ## method for the covariance matrix extimation in PBC and TS
-  if(! method %in% c("EE", "PBC", "TS")) {
+  if(! method %in% c("EE", "PBC", "TS", "TS.TempSt")) {
     stop("Unknow method for signal estimation")
   }
   if(is.null(colnames(Xtilde))) {

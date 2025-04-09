@@ -300,9 +300,16 @@ tlsLm <- function(X, Y, nruns.X, conf.level) {
                          })
       beta.s <- apply(resample, 2,
                       function(x) {
-                        Xs <- X[x, ]
-                        Ys <- Y[x, ]
-                        Estls(Xs, Ys, Dn.X)$beta.hat
+                        tryCatch({
+                          Xs <- X[x, ]
+                          Ys <- Y[x, ]
+                          Estls(Xs, Ys, Dn.X)$beta.hat
+                        }, error = function(e){
+                          rep(NA, ncol(X))
+                        })
+                        # Xs <- X[x, ]
+                        # Ys <- Y[x, ]
+                        # Estls(Xs, Ys, Dn.X)$beta.hat
                       })
       if(ncol(X) == 1) {
         matrix(beta.s, ncol = B)
@@ -310,12 +317,15 @@ tlsLm <- function(X, Y, nruns.X, conf.level) {
         beta.s
       }
     }, error = function(e) {
-      as.matrix(c(0, 0))
+      as.matrix(rep(0, ncol(X)))
     })
     if (ncol(beta.s) == B) {
       break
     }
   }
+  ## remove the NA
+  beta.s <- 
+    beta.s[, which(apply(beta.s, 2, function(x) {!any(is.na(x))})), drop = FALSE]
   
   alpha <- 1 - conf.level
   
@@ -404,9 +414,13 @@ tlsLm.boot <- function(X, Y, nruns.X, B = 100) {
                          })
       beta.s <- apply(resample, 2,
                       function(x) {
-                        Xs <- X[x, ]
-                        Ys <- Y[x, ]
-                        Estls(Xs, Ys, Dn.X)$beta.hat
+                        tryCatch({
+                          Xs <- X[x, ]
+                          Ys <- Y[x, ]
+                          Estls(Xs, Ys, Dn.X)$beta.hat
+                        }, error = function(e){
+                          rep(NA, ncol(X))
+                        })
                       })
       if(ncol(X) == 1) {
         matrix(beta.s, ncol = B)
@@ -414,12 +428,15 @@ tlsLm.boot <- function(X, Y, nruns.X, B = 100) {
         beta.s
       }
     }, error = function(e) {
-      as.matrix(c(0, 0))
+      as.matrix(rep(0, ncol(X)))
     })
     if (ncol(beta.s) == B) {
       break
     }
   }
+  ## remove the NA
+  beta.s <- 
+    beta.s[, which(apply(beta.s, 2, function(x) {!any(is.na(x))})), drop = FALSE]
   
   list(beta.s.list = beta.s, beta.s = Estls(X, Y, Dn.X)$beta.hat)
 }

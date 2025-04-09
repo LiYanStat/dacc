@@ -149,9 +149,13 @@ tlsLmTS <- function(X, Y, nruns.X, conf.level, Z.2, cov.sinv, B) {
                          })
       beta.s <- apply(resample, 2,
                       function(x) {
-                        Xs <- X[x, ]
-                        Ys <- Y[x, ]
-                        Estls.beta(Xs, Ys, Dn.X)
+                        tryCatch({
+                          Xs <- X[x, ]
+                          Ys <- Y[x, ]
+                          Estls.beta(Xs, Ys, Dn.X)
+                        }, error = function(e){
+                          rep(NA, ncol(X))
+                        }) 
                       })
       if(ncol(X) == 1) {
         matrix(beta.s, ncol = B)
@@ -159,12 +163,14 @@ tlsLmTS <- function(X, Y, nruns.X, conf.level, Z.2, cov.sinv, B) {
         beta.s
       }
     }, error = function(e) {
-      as.matrix(c(0, 0))
+      as.matrix(rep(0, ncol(X)))
     })
     if (ncol(beta.s) == B) {
       break
     }
   }
+  beta.s <- 
+    beta.s[, which(apply(beta.s, 2, function(x) {!any(is.na(x))})), drop = FALSE]
   
   ## alpha value
   alpha <- 1 - conf.level
