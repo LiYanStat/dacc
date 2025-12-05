@@ -22,6 +22,8 @@ fingerprintTS <- function(X, Y, nruns.X, cov, Z.2, precision = FALSE, conf.level
   ci.estim <- output$ci
   sd.estim <- output$sd
   
+  
+  
   ## label the cols and rows of the estimation
   numbeta <- length(beta.hat)
   if(is.null(colnames(X))) {

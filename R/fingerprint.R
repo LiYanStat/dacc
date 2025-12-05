@@ -42,8 +42,9 @@
 ##'       \emph{Environ. Res. Lett.} 16(8) 084043.
 ##' \item Sai et al (2023), Optimal Fingerprinting with Estimating Equations,
 ##'       \emph{Journal of Climate} 36(20), 7109–-7122.
-##' \item Li et al (2024), Detection and Attribution Analysis of Temperature Changes with Estimating Equations,
-##'       \emph{Submitted to Journal of Climate}.
+##' \item Li et al (2025), Improved Optimal Fingerprinting Based on Estimating 
+##'       Equations Reaffirms Anthropogenic Effect on Global Warming,
+##'       \emph{Journal of Climate}. 38(8), 1779–-1790.
 ##' }
 ##' @examples
 ##' ## load the example dataset
@@ -86,7 +87,7 @@
 ##' @importFrom grDevices boxplot.stats
 ##' @export fingerprint
 
-fingerprint <- function(Xtilde, Y, mruns, 
+fingerprint <- function(Xtilde, Y, mruns,
                         ctlruns.sigma, ctlruns.bhvar,
                         S, T, B = 0,
                         Proj = diag(ncol(Xtilde)),
@@ -165,14 +166,14 @@ fingerprint <- function(Xtilde, Y, mruns,
                               Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
                               precision = FALSE,
                               conf.level = conf.level,
-                              B = 1000)
+                              B = B)
     }
     if(method == "TS.TempSt") {
       # cov <- Covest(ctlruns.sigma, method = "l2")$output
       ## check number of time steps, if C > 1, use the pooled data to estimate
       ## the covariance matrix as a block diagonal matrix (a spatial-temporal covariance 
       ## matrix with temporal independence).
-      if(T == 1){
+      if(T == 1) {
         cov <- lwRegcov(ctlruns.sigma)
       } else {
         if(S == 1) {
@@ -187,44 +188,34 @@ fingerprint <- function(Xtilde, Y, mruns,
                               Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
                               precision = FALSE,
                               conf.level = conf.level,
-                              B = 1000)
+                              B = B)
     }
     
-        ## handling the projection matrix
-    if(any(Proj != diag(Xtilde))) {
-      ## estimation
-      beta.Proj <- Proj %*% as.vector(output$beta)
-      var.Proj <- Proj %*% output$var %*% t(Proj)
-      sd.Proj <- sqrt(diag(output$var))
-      ## confidence interval
-      norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
-      ci.Proj <- cbind(beta.Proj - norm.crt * sd.Proj,
-                       beta.Proj + norm.crt * sd.Proj)
-      ## summarize the results
-      output$beta.Proj <- beta.Proj
-      output$var.Proj <- var.Proj
-      output$ci.Proj <- ci.Proj
-      ## rename the results
-      if(is.null(rownames(Proj))) {
-        Xlab <- paste0("forcings ", 1:ncol(Xtilde))
-      } else {
-        Xlab <- rownames(Proj)
-      }
-      names(output$beta.Proj) <- Xlab
-      rownames(output$var.Proj) <- colnames(output$var.Proj) <- Xlab
-      rownames(output$ci.Proj) <- Xlab
-      colnames(output$ci.Proj) <- c("Lower bound", "Upper bound")
-    }
-    # 
-    # ## combine the results
-    # result <- list(beta = beta.hat,
-    #                var = sd.estim,
-    #                ci = ci.estim)
-    # 
-    # result <- list(beta = beta.hat,
-    #                ci = ci.estim, 
-    #                var = sd.estim, 
-    #                pbc.ratio = ratio)
+    # ## handling the projection matrix
+    # if(any(Proj != diag(ncol(Xtilde)))) {
+    #   ## estimation
+    #   beta.Proj <- Proj %*% as.vector(output$beta)
+    #   var.Proj <- Proj %*% output$var %*% t(Proj)
+    #   sd.Proj <- sqrt(diag(output$var))
+    #   ## confidence interval
+    #   norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
+    #   ci.Proj <- cbind(beta.Proj - norm.crt * sd.Proj,
+    #                    beta.Proj + norm.crt * sd.Proj)
+    #   ## summarize the results
+    #   output$beta.Proj <- beta.Proj
+    #   output$var.Proj <- var.Proj
+    #   output$ci.Proj <- ci.Proj
+    #   ## rename the results
+    #   if(is.null(rownames(Proj))) {
+    #     Xlab <- paste0("forcings ", 1:ncol(Xtilde))
+    #   } else {
+    #     Xlab <- rownames(Proj)
+    #   }
+    #   names(output$beta.Proj) <- Xlab
+    #   rownames(output$var.Proj) <- colnames(output$var.Proj) <- Xlab
+    #   rownames(output$ci.Proj) <- Xlab
+    #   colnames(output$ci.Proj) <- c("Lower bound", "Upper bound")
+    # }
 
   }
   ## return the output

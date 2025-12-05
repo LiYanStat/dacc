@@ -21,7 +21,7 @@
 ##' @keywords NetCDF fingerprinting
 ##' @import ncdf4
 ##' @importFrom utils head tail
-##' @importFrom CFtime CFtime as_timestamp CFparse
+##' @importFrom CFtime CFtime as_timestamp parse_timestamps
 ##' @importFrom sp point.in.polygon
 ##' @export fpPrep
 
@@ -46,7 +46,7 @@ fpPrep <- function(datafile, variable, region = "GL", target.year,
   ## get character-string times
   timestamps <- as_timestamp(cftime)
   ## parse the string into date components
-  time_cf <- CFparse(cftime, timestamps)
+  time_cf <- parse_timestamps(cftime, timestamps)
   
   ## get the data year
   data.year <- c(head(time_cf$year, 1), tail(time_cf$year, 1))

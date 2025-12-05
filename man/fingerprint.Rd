@@ -115,8 +115,9 @@ applications in calibration, \emph{Statistics} 47(5), 966--991.
       \emph{Environ. Res. Lett.} 16(8) 084043.
 \item Sai et al (2023), Optimal Fingerprinting with Estimating Equations,
       \emph{Journal of Climate} 36(20), 7109–-7122.
-\item Li et al (2024), Detection and Attribution Analysis of Temperature Changes with Estimating Equations,
-      \emph{Submitted to Journal of Climate}.
+\item Li et al (2025), Improved Optimal Fingerprinting Based on Estimating 
+      Equations Reaffirms Anthropogenic Effect on Global Warming,
+      \emph{Journal of Climate}. 38(8), 1779–-1790.
 }
 }
 \author{
