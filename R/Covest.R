@@ -110,31 +110,65 @@ cvFolds <- function(input, k = 5) {
 ## large-dimensional covariance matrices.
 ## Journal of Multivariate Analysis, 88(2): 365-411.
 ## L&W estimate
+# lwRegcov <- function(Z) {
+#   ## input:
+#   ##   the independent replicates of the random vector, denoted by matrix Z
+#   ##   each column represents a random variable. Thus Z is n*p matrix
+#   ## output:
+#   ##   regularized covariance matrix
+#   n <- nrow(Z)
+#   p <- ncol(Z)
+#   sample.cov <- cov(Z)
+#   Ip <- diag(p)
+#   m <- sum(diag(sample.cov %*% Ip)) / p ## first estimate in L&W
+#   Zp <- sample.cov - m * Ip
+#   d2 <- sum(diag(Zp %*% t(Zp))) / p  ## second estimate in L&W
+#   
+#   bt <- (diag(Z %*% t(Z))^2 - 2 * diag(Z %*% sample.cov %*% t(Z)) + rep(1, n) *
+#            sum(diag(sample.cov %*% sample.cov))) / p
+#   
+#   bb2 <- 1 / n^2 * sum(bt)
+#   b2 <- min(bb2,d2)  ## third estimate in L&W
+#   a2 <- d2 - b2  ## fourth estimate in L&W
+#   ## the regularized estimate of the covariance matrix
+#   b2 * m / d2 * Ip + a2 / d2 * sample.cov
+# }
+
 lwRegcov <- function(Z) {
   ## input:
   ##   the independent replicates of the random vector, denoted by matrix Z
   ##   each column represents a random variable. Thus Z is n*p matrix
   ## output:
   ##   regularized covariance matrix
+  
   n <- nrow(Z)
   p <- ncol(Z)
-  sample.cov <- cov(Z)
+  
+  ## center once, since cov(Z) also uses centered data
+  Z <- scale(Z, center = TRUE, scale = FALSE)
+  
+  sample.cov <- crossprod(Z) / (n - 1)
   Ip <- diag(p)
-  m <- sum(diag(sample.cov %*% Ip)) / p ## first estimate in L&W
+  
+  m <- mean(diag(sample.cov))   ## first estimate in L&W
   Zp <- sample.cov - m * Ip
-  d2 <- sum(diag(Zp %*% t(Zp))) / p  ## second estimate in L&W
+  d2 <- sum(Zp^2) / p           ## second estimate in L&W
   
-  bt <- (diag(Z %*% t(Z))^2 - 2 * diag(Z %*% sample.cov %*% t(Z)) + rep(1, n) *
-           sum(diag(sample.cov %*% sample.cov))) / p
+  ## diag(Z %*% t(Z)) = rowSums(Z^2)
+  qf1 <- rowSums(Z^2)
   
-  bb2 <- 1 / n^2 * sum(bt)
-  b2 <- min(bb2,d2)  ## third estimate in L&W
-  a2 <- d2 - b2  ## fourth estimate in L&W
+  ## diag(Z %*% sample.cov %*% t(Z)) = rowSums((Z %*% sample.cov) * Z)
+  qf2 <- rowSums((Z %*% sample.cov) * Z)
+  
+  bt <- (qf1^2 - 2 * qf2 + sum(sample.cov^2)) / p
+  
+  bb2 <- sum(bt) / n^2
+  b2 <- min(bb2, d2)   ## third estimate in L&W
+  a2 <- d2 - b2        ## fourth estimate in L&W
+  
   ## the regularized estimate of the covariance matrix
   b2 * m / d2 * Ip + a2 / d2 * sample.cov
 }
-
-
 
 
 
@@ -146,6 +180,69 @@ lwRegcov <- function(Z) {
 ## Large-Dimensional Covariance Matrice.
 ## Working paper. avaliable at
 ## https://ssrn.com/abstract=3047302
+# lwMvcov <- function(Z, h.par) {
+#   ## input:
+#   ##   the sample replicates of the random vector,
+#   ##   denoted by n*p matrix Z.
+#   ## output:
+#   ##   nonlinear shrinkage covariance matrix under minimum variance
+#   ##   loss function.
+#   if(max(abs(colMeans(Z))) < 1e-12) {
+#     n <- nrow(Z) - 1
+#   } else {
+#     n <- nrow(Z)
+#   }
+#   p <- ncol(Z)
+#   ## sample covariance matrix
+#   sample.cov <- cov(Z)
+#   ## sample.cov <- t(Z) %*% Z / n
+#   ## eigen value and vectors
+#   lambda <- eigen(sample.cov)$value
+#   eigen.v <- eigen(sample.cov)$vectors
+#   temOd <- order(lambda)
+#   lambda <- lambda[temOd]
+#   eigen.v <- eigen.v[, temOd]
+#   ## check whether the eigenvalues are close to zero
+#   ## avoid effects of extremely small eigenvalues
+#   test <- sum(sapply(lambda, 
+#                      function(x) {
+#                        x < 5 * 10^{-5}
+#                      }) != "TRUE")
+#   if(test < p) {
+#     n <- test
+#   }
+#   if(p == n) {
+#     n <- n - 1
+#   }
+#   ## compute the direct kernal estimator
+#   lambda.tilde <- lambda[max(1, p - n  + 1):p]
+#   h <- n^(-h.par)
+#   L <- matrix(rep(lambda.tilde, min(p, n)), length(lambda.tilde), min(p,n))
+#   TemM <- 4 * t(L)^2 * h^2 - (L - t(L))^2
+#   TemM[TemM < 0] = 0
+#   ftilde <- rowMeans(sqrt(TemM) / (2 * pi * h^2 * t(L)^2))
+#   TemM <- -(4 * t(L)^2 * h^2 - (L - t(L))^2)
+#   TemM[TemM < 0] = 0
+#   Hftilde <- rowMeans((sign(L - t(L)) * sqrt(TemM) - L + t(L)) /
+#                         (2 * pi * h^2 * t(L)^2))
+#   if(p <= n) {
+#     ## non-singular case
+#     dtilde <- lambda.tilde / ((pi * p / n * lambda.tilde * ftilde)^2 +
+#                                 (1 - p/n - pi * p/n * lambda.tilde * Hftilde)^2)
+#   } else {
+#     ## singular case
+#     Hftilde0 <- (1 - sqrt(1 - 4 * h^2)) / (2 * pi * h^2) * mean(1 / lambda.tilde)
+#     dtilde0 <- 1 / (pi * (p - n) / n * Hftilde0)
+#     dtilde1 <- lambda.tilde / (pi^2 * lambda.tilde^2 * (ftilde^2 + Hftilde^2))
+#     dtilde <- c(rep(dtilde0, p - n), dtilde1)
+#   }
+#   ## Pool Adjacent Violators algorithm.
+#   dtilde <- pava(dtilde)
+#   ## output the covariance matrix
+#   eigen.v %*% diag(dtilde) %*% t(eigen.v)
+# }
+
+
 lwMvcov <- function(Z, h.par) {
   ## input:
   ##   the sample replicates of the random vector,
@@ -153,48 +250,59 @@ lwMvcov <- function(Z, h.par) {
   ## output:
   ##   nonlinear shrinkage covariance matrix under minimum variance
   ##   loss function.
-  if(max(abs(colMeans(Z))) < 1e-12) {
+  
+  if (max(abs(colMeans(Z))) < 1e-12) {
     n <- nrow(Z) - 1
   } else {
     n <- nrow(Z)
   }
   p <- ncol(Z)
+  
   ## sample covariance matrix
   sample.cov <- cov(Z)
-  ## sample.cov <- t(Z) %*% Z / n
+  
   ## eigen value and vectors
-  lambda <- eigen(sample.cov)$value
-  eigen.v <- eigen(sample.cov)$vectors
+  eig <- eigen(sample.cov, symmetric = TRUE)
+  lambda <- eig$values
+  eigen.v <- eig$vectors
+  
   temOd <- order(lambda)
   lambda <- lambda[temOd]
-  eigen.v <- eigen.v[, temOd]
+  eigen.v <- eigen.v[, temOd, drop = FALSE]
+  
   ## check whether the eigenvalues are close to zero
   ## avoid effects of extremely small eigenvalues
-  test <- sum(sapply(lambda, 
-                     function(x) {
-                       x < 5 * 10^{-5}
-                     }) != "TRUE")
-  if(test < p) {
+  test <- sum(lambda >= 5e-5)
+  if (test < p) {
     n <- test
   }
-  if(p == n) {
+  if (p == n) {
     n <- n - 1
   }
+  
   ## compute the direct kernal estimator
-  lambda.tilde <- lambda[max(1, p - n  + 1):p]
+  lambda.tilde <- lambda[max(1, p - n + 1):p]
   h <- n^(-h.par)
-  L <- matrix(rep(lambda.tilde, min(p, n)), length(lambda.tilde), min(p,n))
-  TemM <- 4 * t(L)^2 * h^2 - (L - t(L))^2
-  TemM[TemM < 0] = 0
-  ftilde <- rowMeans(sqrt(TemM) / (2 * pi * h^2 * t(L)^2))
-  TemM <- -(4 * t(L)^2 * h^2 - (L - t(L))^2)
-  TemM[TemM < 0] = 0
-  Hftilde <- rowMeans((sign(L - t(L)) * sqrt(TemM) - L + t(L)) /
-                        (2 * pi * h^2 * t(L)^2))
-  if(p <= n) {
+  
+  ## preserve the original columnwise construction exactly
+  L <- matrix(rep(lambda.tilde, min(p, n)),
+              length(lambda.tilde), min(p, n))
+  Lt <- t(L)
+  
+  TemM <- 4 * Lt^2 * h^2 - (L - Lt)^2
+  TemM[TemM < 0] <- 0
+  ftilde <- rowMeans(sqrt(TemM) / (2 * pi * h^2 * Lt^2))
+  
+  TemM <- -(4 * Lt^2 * h^2 - (L - Lt)^2)
+  TemM[TemM < 0] <- 0
+  Hftilde <- rowMeans((sign(L - Lt) * sqrt(TemM) - L + Lt) /
+                        (2 * pi * h^2 * Lt^2))
+  
+  if (p <= n) {
     ## non-singular case
-    dtilde <- lambda.tilde / ((pi * p / n * lambda.tilde * ftilde)^2 +
-                                (1 - p/n - pi * p/n * lambda.tilde * Hftilde)^2)
+    c1 <- pi * p / n
+    dtilde <- lambda.tilde / ((c1 * lambda.tilde * ftilde)^2 +
+                                (1 - p / n - c1 * lambda.tilde * Hftilde)^2)
   } else {
     ## singular case
     Hftilde0 <- (1 - sqrt(1 - 4 * h^2)) / (2 * pi * h^2) * mean(1 / lambda.tilde)
@@ -202,8 +310,10 @@ lwMvcov <- function(Z, h.par) {
     dtilde1 <- lambda.tilde / (pi^2 * lambda.tilde^2 * (ftilde^2 + Hftilde^2))
     dtilde <- c(rep(dtilde0, p - n), dtilde1)
   }
+  
   ## Pool Adjacent Violators algorithm.
   dtilde <- pava(dtilde)
+  
   ## output the covariance matrix
-  eigen.v %*% diag(dtilde) %*% t(eigen.v)
+  tcrossprod(eigen.v * rep(dtilde, each = nrow(eigen.v)), eigen.v)
 }

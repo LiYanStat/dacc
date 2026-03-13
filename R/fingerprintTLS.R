@@ -174,7 +174,7 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
     out.beta <- out.var <- NULL
     for (i in 1:B) {
       ## generate new dataset
-      for(er in 1:50) {
+      for(er in 1:30) {
         tmp.new <- tryCatch({
           Y.new <- MASS::mvrnorm(n = 1, mu = output[, "Y"], Sigma = cov)
           X.new <- NULL
@@ -191,7 +191,7 @@ fingerprintTLS <- function(X, Y, cov, nruns.X, ctlruns,
           ## repeat the function without TSB and PBC
           fingerprintTLS(X.new, Y.new, Cov.new, nruns.X, ctlruns.new, conf.method = "none", cov.method = cov.method)
         }, error = function(e) {
-          ""
+          list(beta = rep(0, ncol(output) - 1), var = matrix(1, nrow = 2, ncol = ncol(output) - 1))
         })
         if (tmp.new[1] != "") {
           break
