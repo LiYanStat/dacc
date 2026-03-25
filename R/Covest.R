@@ -170,7 +170,22 @@ lwRegcov <- function(Z) {
   b2 * m / d2 * Ip + a2 / d2 * sample.cov
 }
 
-
+lwRegcov.lam <- function(Z) {
+  n <- nrow(Z)
+  p <- ncol(Z)
+  sample.cov <- cov(Z)
+  Ip <- diag(p)
+  m  <- sum(diag(sample.cov %*% Ip)) / p
+  Zp <- sample.cov - m * Ip
+  d2 <- sum(diag(Zp %*% t(Zp))) / p
+  bt <- (diag(Z %*% t(Z))^2 -
+           2 * diag(Z %*% sample.cov %*% t(Z)) +
+           rep(1, n) * sum(diag(sample.cov %*% sample.cov))) / p
+  bb2 <- 1 / n^2 * sum(bt)
+  b2  <- min(bb2, d2)
+  a2  <- d2 - b2
+  b2 * m / a2
+}
 
 
 ## compute the regularized estimate of the covariance matrix

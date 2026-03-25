@@ -13,3 +13,6 @@
 ^README\.md$
 ^notes$
 ^cran-comments\.md$
+^\.claude$
+^proposed_changes$                                                                                                                                
+^STUDY_GUIDE
