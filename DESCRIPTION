@@ -1,13 +1,14 @@
 Package: dacc
 Title: Detection and Attribution Analysis of Climate Change
-Version: 0.0-8
-Date: 2025-12-05
+Version: 0.0-10
+Date: 2026-03-25
 Authors@R: c(
     person(given = "Yan", family = "Li",
            email = "yan.4.li@uconn.edu",
            role = c("aut", "cre")),
     person(given = "Kun", family = "Chen", role = "aut"),
-    person(given = "Jun", family = "Yan", role = "aut"))
+    person(given = "Jun", family = "Yan", role = "aut"),
+    person(given = "Charles", family = "Benfer", role = "aut"))
 Description: 
     Detection and attribution of climate change using methods including optimal fingerprinting via 
     generalized total least squares or an estimating equation approach (Li et al., 2025, 
