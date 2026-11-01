@@ -1,223 +1,433 @@
-##' Optimal Fingerprinting via total least square regression.
+##' Detection and attribution with polynomial shrinkage under variance heterogeneity
 ##'
-##' This function estimates the signal factors and corresponding confidence 
-##' interval via the estimating equation or total least squares.
+##' Implements the method proposed in work by Li and Li (2026) for detection
+##' and attribution (D&A) analysis of climate change using polynomial shrinkage
+##' under variance heterogeneity. The framework allows forced simulations and
+##' control runs to have different internal variability magnitudes from observations,
+##' while sharing a common covariance structure. It estimates forcing scaling factors,
+##' optionally estimates variance inflation factors, and provides asymptotic confidence
+##' intervals and approximate residual diagnostics.
 ##'
-##' @param Xtilde \eqn{n \times p} matrix, signal pattern to be detected.
-##' @param Y \eqn{n \times 1} matrix, length \eqn{S \times T}, observed climate variable.
-##' @param mruns number of ensembles to estimate the corresponding pattern. 
-##' It is used as the scale of the covariance matrix for \eqn{X_i}.
-##' @param ctlruns.sigma \eqn{m \times n} matrix, a group of \eqn{m} independent control 
-##' runs for estimating covariance matrix, which is used in point estimation of 
-##' the signal factors.
-##' @param ctlruns.bhvar \eqn{m \times n} matrix, another group of \eqn{m} independent control 
-##' runs for estimating the corresponding confidence interval of the signal factors, 
-##' in EE or PBC approach should be same as ctlruns.sigma.
-##' @param S number of locations for the observed responses.
-##' @param T number of time steps for the observed responses.
-##' @param B number of replicates in bootstrap procedure, mainly for the PBC and TS methods, can be 
-##' specified in "EE" method but not necessary. By default B = 0 as the default method is "EE".
-##' @param Proj The projection matrix for computing for scaling factors of other external forcings 
-##' with the current input when using EE. For example, when ALL and NAT are used for modeling, 
-##' specifying the Proj matrix to return the results for ANT and NAT.
-##' @param method for estimating the scaling factors and corresponding confidence interval
-##' @param cov.method method for estimation of covariance matrix in confidence 
-##' interval estimation of PBC method. (only for PBC method).
-##' @param conf.level confidence level for confidence interval estimation.
-##' @param missing indicator for whether missing values present in Y.
-##' @param cal.a indicator for calculating the a value, otherwise use default value a = 1. (only for EE method)
-##' @param ridge shrinkage value for adjusting the method for missing observations if missing = TRUE. (only for EE method)
-##' @return a list of the fitted model including point estimate and
-##' interval estimate of coefficients and corresponding estimate of standard error.
-##' @author Yan Li
-##' @keywords regression tls fingerprinting estimating equation
-##' @references \itemize{ 
-##' \item  Gleser (1981), Estimation in a Multivariate "Errors in Variables" 
-##' Regression Model: Large Sample Results, \emph{Ann. Stat.} 9(1) 24--44.
-##' \item Golub and Laon (1980), An Analysis of the Total Least Squares Problem,
-##' \emph{SIAM J. Numer. Anal}. 17(6) 883--893.
-##' \item Pesta (2012), Total least squares and bootstrapping with 
-##' applications in calibration, \emph{Statistics} 47(5), 966--991.
-##' \item Li et al (2021), Uncertainty in Optimal Fingerprinting is Underestimated, 
-##'       \emph{Environ. Res. Lett.} 16(8) 084043.
-##' \item Sai et al (2023), Optimal Fingerprinting with Estimating Equations,
-##'       \emph{Journal of Climate} 36(20), 7109–-7122.
-##' \item Li et al (2025), Improved Optimal Fingerprinting Based on Estimating 
-##'       Equations Reaffirms Anthropogenic Effect on Global Warming,
-##'       \emph{Journal of Climate}. 38(8), 1779–-1790.
+##' @details
+##' \subsection{Model}{
+##' Li and Li (2026) extend optimal fingerprinting to allow different magnitudes
+##' of internal variability in observations, forced simulations and control runs:
+##' \deqn{Y=X\beta+\epsilon,\qquad \epsilon\sim N(0,\Sigma),}
+##' \deqn{\widetilde X_{ik}=X_i+\eta_{ik},\qquad
+##' \eta_{ik}\sim N(0,\sigma_x^2\Sigma),\quad k=1,\ldots,n_i,}
+##' \deqn{Z_j\sim N(0,\sigma_z^2\Sigma),\quad j=1,\ldots,m.}
+##' Here \eqn{Y\in\mathbb{R}^N} is the observed climate response,
+##' \eqn{X=(X_1,\ldots,X_p)} contains the true responses to \eqn{p} forcings,
+##' and \eqn{\beta} contains their scaling factors. The errors are mutually
+##' independent and share the covariance structure \eqn{\Sigma}. The factors
+##' \eqn{\sigma_x^2} and \eqn{\sigma_z^2} measure simulation variability relative
+##' to observations; setting both to one gives the conventional equal-variability model.
+##'
+##' The inputs \code{Xtilde} and \code{mruns} specify the ensemble means
+##' \eqn{\widetilde X_i=n_i^{-1}\sum_k\widetilde X_{ik}} and ensemble sizes
+##' \eqn{n_i}. Write \eqn{D=\operatorname{diag}(1/n_1,\ldots,1/n_p)}.
 ##' }
+##' \subsection{Polynomial shrinkage and scaling factors}{
+##' The control covariance \eqn{S=m^{-1}\sum_j Z_jZ_j^\top} may be singular,
+##' including when \eqn{m<N}. It is regularized using
+##' \deqn{W=f(S),\qquad f(t)=1+\sum_{j=1}^k\ell_jt^j.}
+##' Since \eqn{f(0)=1} and \eqn{f} is nondecreasing on the sample spectrum,
+##' \eqn{W} is positive definite even when \eqn{S} is singular.
+##' The degree \eqn{k} is controlled by \code{degree}: one gives linear shrinkage,
+##' while three is recommended in Li and Li (2026). Candidate polynomials must be
+##' nondecreasing on \eqn{[0,\psi_1]}, satisfy \eqn{f(\psi_1)\leq\psi_2}, and
+##' have roots separated by at least \eqn{\psi_3}.
+##'
+##' For a given \eqn{W} and \eqn{s=\sigma_x^2}, the scaling factors minimize
+##' the weighted total least squares criterion
+##' \deqn{\widehat\beta(s,W)=\arg\min_\beta
+##' \frac{(Y-\widetilde X\beta)^\top W^{-1}(Y-\widetilde X\beta)}
+##' {1+s\beta^\top D\beta}.}
+##' The polynomial coefficients are selected by minimizing the estimated total
+##' asymptotic variance \eqn{\operatorname{tr}\widehat\Xi(f)} over an admissible
+##' grid. The default uses 21 points per coefficient; \code{grid.size} and
+##' \code{coefficient.grid} control the search resolution. This is a finite-grid
+##' approximation to the optimization in Li and Li (2026).
+##' }
+##' \subsection{Estimation of variance inflation factors and inference}{
+##' The method estimates both variance inflation factors, \eqn{\sigma_x^2} and
+##' \eqn{\sigma_z^2}, to account for differences in internal variability between
+##' observations, forced simulations and control runs. This is the default behavior
+##' (\code{estimate.factors = TRUE}). Estimation uses the individual forced runs
+##' in \code{ensembles}, in addition to the ensemble means and control runs.
+##'
+##' The within-ensemble variation estimates the marginal variability of the
+##' forced simulations:
+##' \deqn{V_X=\frac{\sum_{i=1}^p\sum_{k=1}^{n_i}
+##' \|\widetilde X_{ik}-\widetilde X_i\|^2}{N(\sum_i n_i-p)}.}
+##' For a given weight matrix \eqn{W}, the forced-simulation inflation factor is
+##' estimated by matching this variation to the residual variation implied by
+##' candidate values of \eqn{\sigma_x^2}:
+##' \deqn{\widehat\sigma_x^2=\arg\min_{s\in\mathcal G}
+##' \left|\frac{s\|Y-\widetilde X\widehat\beta(s,W)\|^2}
+##' {N\{1+s\widehat\beta(s,W)^\top D\widehat\beta(s,W)\}}-V_X\right|,}
+##' where \eqn{\mathcal G} is the grid supplied through \code{factor.grid} or
+##' constructed automatically. The control-run inflation factor is then estimated
+##' from the relative variation in controls and forced simulations:
+##' \deqn{\widehat\sigma_z^2=\widehat\sigma_x^2\frac{V_Z}{V_X},
+##' \qquad V_Z=\operatorname{tr}(S)/N.}
+##'
+##' Initial estimates of both factors are obtained using normalized Ledoit--Wolf
+##' weights. These estimates are used to select the polynomial shrinkage rule.
+##' The factors are then re-estimated using the selected weight matrix, and the
+##' polynomial is reselected using the updated factors. The number of these
+##' additional updates is controlled by \code{refinements} (default one).
+##' The final estimates are returned as \code{sigma.x2} and \code{sigma.z2}.
+##'
+##' As an optional restriction, \code{estimate.factors = FALSE} fixes both factors
+##' at one, imposing equal variability across observations and simulations.
+##' This bypasses factor estimation and refinement, so individual forced runs
+##' are unnecessary. Polynomial selection and scaling-factor inference remain
+##' part of the procedure.
+##'
+##' The estimated inflation factors enter both the final scaling-factor estimate
+##' and its estimated covariance \eqn{\widehat\Xi(\widehat f)/N}. Confidence
+##' intervals use the resulting asymptotic normal approximation. The residual
+##' consistency statistic and its approximate upper-tail normal p-value are
+##' returned as \code{diagnostic.stat} and \code{p.value}. Their reference
+##' calibration can be affected by estimation of the inflation factors and
+##' selection of the shrinkage rule. Missing observations are not supported.
+##' }
+##' @references Li, H. and Li, Y. (2026). Adaptable Fingerprinting with Nonlinear Shrinkage for Climate Change Detection and Attribution under Variance Heterogeneity. Manuscript.
+##' @param Xtilde Numeric N by p matrix of ensemble means.
+##' @param Y Numeric observation vector of length N.
+##' @param mruns Positive integer ensemble sizes, one per forcing.
+##' @param ctlruns Numeric m by N matrix of zero-mean control runs.
+##'   m may be smaller than N; the sample covariance may be singular.
+##' @param ensembles List of p matrices, each n_i by N, containing individual
+##'   forced runs. Required only when estimate.factors is TRUE. Their means
+##'   must agree with Xtilde and their row counts with mruns.
+##' @param degree Positive integer polynomial degree; default 3, or 1 for linear.
+##' @param estimate.factors Estimate both variance inflation factors from data
+##'   (default TRUE). FALSE fixes both at one and skips initialization, the
+##'   inflation-factor search and refinement.
+##' @param conf.level Confidence level for marginal normal intervals.
+##' @param coefficient.grid Optional matrix with degree columns, each row
+##'   containing ell_1,...,ell_k for f(x)=1+sum(ell_j*x^j).
+##' @param grid.size Odd integer number of points per coefficient (at least 5), default 21.
+##'   The default grid spans the manuscript bounds with additional points near
+##'   zero to resolve the bounded admissible region. At most 100000 combinations.
+##' @param psi1 Upper spectral domain bound; defaults to 1.05*max(eigen(S)).
+##' @param psi2 Upper bound on f(psi1); defaults to max(1.1,0.7*psi1).
+##' @param psi3 Minimum polynomial root separation, default 0.001.
+##' @param factor.grid Optional strictly increasing nonnegative grid for sigma_x^2.
+##'   Otherwise an adaptive upper bound and a mixed linear/logarithmic grid is used.
+##' @param refinements Number of additional factor/shrinkage updates, default 1.
+##' @return
+##' An object of class \code{fingerprint}, with a \code{plot()} method for
+##' standardized residuals.
+##' A list containing the following components, where \eqn{N} is the observation
+##' dimension and \eqn{p} is the number of forcings:
+##' \item{beta}{A named numeric vector of length \eqn{p} of estimated forcing
+##' scaling factors \eqn{\widehat\beta}.}
+##' \item{var}{The \eqn{p\times p} estimated covariance matrix of
+##' \eqn{\widehat\beta}, equal to \eqn{\widehat\Xi(\widehat f)/N}.}
+##' \item{sd}{A named numeric vector of standard errors, equal to
+##' \code{sqrt(diag(var))}.}
+##' \item{ci}{A \eqn{p\times 2} matrix of marginal confidence intervals at
+##' \code{conf.level}, with columns \code{lower} and \code{upper}.}
+##' \item{sigma.x2}{The variance inflation factor for individual forced simulations
+##' relative to observations, estimated from data or fixed at one.}
+##' \item{sigma.z2}{The variance inflation factor for control runs relative to
+##' observations, estimated from data or fixed at one.}
+##' \item{coefficients}{A numeric vector \eqn{(1,\ell_1,\ldots,\ell_k)} defining
+##' the selected polynomial \eqn{\widehat f(t)=1+\sum_{j=1}^k\ell_jt^j}.
+##' Coefficients are ordered by ascending power; the intercept is fixed at one.}
+##' \item{weight}{The \eqn{N\times N} regularized covariance weight matrix
+##' \eqn{W=\widehat f(S)}. Its inverse is used in the weighted TLS loss.}
+##' \item{residuals}{A numeric vector of length \eqn{N} of fitted residuals
+##' \eqn{Y-\widetilde X\widehat\beta}.}
+##' \item{standardized.residuals}{Residuals divided by their estimated marginal
+##' standard deviations, computed from
+##' \eqn{(1+\widehat\sigma_x^2\widehat\beta^\top D\widehat\beta)
+##' S_{ii}/\widehat\sigma_z^2}.}
+##' \item{diagnostic.stat}{The standardized residual consistency statistic \eqn{\widehat Q/\sqrt{\widehat V}}, as defined in Li and Li (2026).}
+##' \item{p.value}{The approximate upper-tail standard normal p-value for residual
+##' consistency. Factor estimation and shrinkage selection can affect its calibration.}
+##' \item{call}{The matched function call.}
+##' @seealso \code{\link{plot.fingerprint}} for residual plots;
+##' \code{\link{fingerprintLegacy}} for earlier fingerprinting methods.
 ##' @examples
-##' ## load the example dataset
-##' data(simDat)
-##' Cov <- simDat$Cov[[1]]
-##' ANT <- simDat$X[, 1]
-##' NAT <- simDat$X[, 2]
-##' 
-##' ## generate the simulated data set
-##' ## generate regression observation
-##' Y <- MASS::mvrnorm(n = 1, mu = ANT + NAT, Sigma = Cov)
-##' ## generate the forcing responses
-##' mruns <- c(1, 1)
-##' Xtilde <- cbind(MASS::mvrnorm(n = 1, mu = ANT, Sigma = Cov / mruns[1]),
-##'                MASS::mvrnorm(n = 1, mu = NAT, Sigma = Cov / mruns[2]))
-##' ## control runs
-##' ctlruns <- MASS::mvrnorm(100, mu = rep(0, nrow(Cov)), Sigma = Cov)
-##' ## ctlruns.sigma for the point estimation and ctlruns.bhvar for the interval estimation
-##' ctlruns.sigma <- ctlruns.bhvar <- ctlruns
-##' ## number of locations
-##' S <- 25
-##' ## number of year steps
-##' T <- 10
-##' 
-##' ## call the function to estimate the signal factors via EE
-##' fingerprint(Xtilde, Y, mruns,
-##'           ctlruns.sigma, ctlruns.bhvar,
-##'           S, T,
-##'           ## B = 0, by default
-##'           method = "EE",
-##'           conf.level = 0.9,
-##'           cal.a = TRUE,
-##'           missing = FALSE, ridge = 0)
-##' @import magrittr
-##' @importFrom MASS mvrnorm
-##' @importFrom stats cov qnorm quantile sd var pnorm
-##' @importFrom utils tail
-##' @importFrom pracma ceil
-##' @importFrom janitor remove_empty
-##' @importFrom grDevices boxplot.stats
-##' @export fingerprint
+##' set.seed(12)
+##' N <- 60
+##' signal <- 3 * sin(seq_len(N) / 6)
+##' ensembles <- list(sweep(matrix(rnorm(30 * N), 30), 2, signal, "+"))
+##' Xtilde <- matrix(colMeans(ensembles[[1]]), ncol = 1)
+##' Z <- matrix(rnorm(120 * N), nrow = 120)
+##' Y <- signal + rnorm(N)
+##'
+##' fit <- fingerprint(Xtilde, Y, mruns = 30, ctlruns = Z,
+##'                    ensembles = ensembles)
+##'
+##' # Observation index, with the default 95% normal reference band.
+##' plot(fit)
+##'
+##' # Use time coordinates and customize the appearance.
+##' years <- 1961 + seq_len(N) - 1
+##' plot(fit, index = years, xlab = "Year", col = "steelblue",
+##'      band.col = "grey90")
+##'
+##' # Change the pointwise reference level to 90%.
+##' plot(fit, reference.level = 0.90)
+##' @export
+fingerprint <- function(
+    Xtilde,
+    Y,
+    mruns,
+    ctlruns,
+    ensembles = NULL,
+    degree = 3L,
+    estimate.factors = TRUE,
+    conf.level = 0.9,
+    coefficient.grid = NULL,
+    grid.size = 21L,
+    psi1 = NULL,
+    psi2 = NULL,
+    psi3 = 1e-3,
+    factor.grid = NULL,
+    refinements = 1L
+) {
+    Call <- match.call()
+    if (!.fp_finite_matrix(Xtilde) || !.fp_finite_matrix(ctlruns))
+        stop("Xtilde and ctlruns must be finite numeric matrices")
 
-fingerprint <- function(Xtilde, Y, mruns,
-                        ctlruns.sigma, ctlruns.bhvar,
-                        S, T, B = 0,
-                        Proj = diag(ncol(Xtilde)),
-                        method = c("EE", "PBC", "TS", "TS.TempSt"),
-                        cov.method = c("l2", "mv"),
-                        conf.level = 0.90,
-                        missing = FALSE,
-                        cal.a = TRUE, ridge = 0) {
-  Call <- match.call()
-  Xtilde <- as.matrix(Xtilde)
-  method <- match.arg(method)  ## method for the estimating procedure
-  cov.method <- match.arg(cov.method)  ## method for the covariance matrix extimation in PBC and TS
-  if(! method %in% c("EE", "PBC", "TS", "TS.TempSt")) {
-    stop("Unknow method for signal estimation")
-  }
-  if(is.null(colnames(Xtilde))) {
-    colnames(Xtilde) <- paste0("forcings ", 1:ncol(Xtilde))
-  }
-  ## for the EE method
-  if(method == "EE") {
-    ## check the missing value
-    if(any(is.na(Y))) {
-      if(!missing) {
-        message("missing values in observations")
-      }
-      missing <- TRUE
-    } else {
-      if(missing) {
-        message("no missing values in observations")
-      }
-      missing <- FALSE
-    }
-    output <- fingerprintCEE(
-      Xtilde = Xtilde, Y = Y, mruns = mruns,
-      ctlruns.1 = ctlruns.sigma, 
-      ctlruns.2 = ctlruns.bhvar,
-      Proj = Proj,
-      nS = S, nT = T, nB = B,
-      conf.level = conf.level,
-      cal.a = cal.a, missing = missing,
-      ridge = ridge
+    N <- nrow(Xtilde)
+    p <- ncol(Xtilde)
+    m <- nrow(ctlruns)
+    if (
+        p < 1L || N <= p || m < 2L || ncol(ctlruns) != N ||
+        !is.numeric(Y) || length(Y) != N || any(!is.finite(Y))
     )
-  } else {
-    if (cov.method == "l2") {
-      cov <- Covest(ctlruns.sigma, method = "l2")$output
-    } else if (cov.method == "mv") {
-      cov <- Covest(ctlruns.sigma, method = "mv", bandwidth = 0.35)$output
-    } else {
-      stop("Unknow method for covariance matrix estimation")
-    }
-    
-    if(missing) {
-      ## check the missing value
-      nomis <- which(!is.na(Y))
-    } else {
-      nomis <- 1:length(Y)
-    }
-    ## for the PBC method
-    if(method == "PBC") {
-      output <- fingerprintTLS(
-        X = Xtilde[nomis, , drop = FALSE], 
-        Y = Y[nomis, , drop = FALSE],
-        cov = cov[nomis, nomis, drop = FALSE], nruns.X = mruns,
-        ctlruns = ctlruns.sigma[, nomis, drop = FALSE],
-        precision = FALSE,
-        conf.level = conf.level,
-        conf.method = "PBC",  ## only output results from PBC (TSB also available)
-        cov.method = cov.method,
-        B = B)
-    }
-    ## for the two sample approach
-    if(method == "TS") {
-      output <- fingerprintTS(X = Xtilde[nomis, , drop = FALSE],
-                              Y = Y[nomis, , drop = FALSE],
-                              nruns.X = mruns, cov = cov[nomis, nomis, drop = FALSE],
-                              Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
-                              precision = FALSE,
-                              conf.level = conf.level,
-                              B = B)
-    }
-    if(method == "TS.TempSt") {
-      # cov <- Covest(ctlruns.sigma, method = "l2")$output
-      ## check number of time steps, if C > 1, use the pooled data to estimate
-      ## the covariance matrix as a block diagonal matrix (a spatial-temporal covariance 
-      ## matrix with temporal independence).
-      if(T == 1) {
-        cov <- lwRegcov(ctlruns.sigma)
-      } else {
-        if(S == 1) {
-          cov <- diag(T) %x% cov(t(poolDat(X = t(ctlruns.sigma), C = T, ni = S)))
-        } else {
-          cov <- diag(T) %x% lwRegcov(t(poolDat(X = t(ctlruns.sigma), C = T, ni = S)))
-        }
-      }
-      output <- fingerprintTS(X = Xtilde[nomis, , drop = FALSE],
-                              Y = Y[nomis, , drop = FALSE],
-                              nruns.X = mruns, cov = cov[nomis, nomis, drop = FALSE],
-                              Z.2 = ctlruns.bhvar[, nomis, drop = FALSE],
-                              precision = FALSE,
-                              conf.level = conf.level,
-                              B = B)
-    }
-    
-    # ## handling the projection matrix
-    # if(any(Proj != diag(ncol(Xtilde)))) {
-    #   ## estimation
-    #   beta.Proj <- Proj %*% as.vector(output$beta)
-    #   var.Proj <- Proj %*% output$var %*% t(Proj)
-    #   sd.Proj <- sqrt(diag(output$var))
-    #   ## confidence interval
-    #   norm.crt <- qnorm(1 - (1 - conf.level)/2)  ## critical value for normal approximation
-    #   ci.Proj <- cbind(beta.Proj - norm.crt * sd.Proj,
-    #                    beta.Proj + norm.crt * sd.Proj)
-    #   ## summarize the results
-    #   output$beta.Proj <- beta.Proj
-    #   output$var.Proj <- var.Proj
-    #   output$ci.Proj <- ci.Proj
-    #   ## rename the results
-    #   if(is.null(rownames(Proj))) {
-    #     Xlab <- paste0("forcings ", 1:ncol(Xtilde))
-    #   } else {
-    #     Xlab <- rownames(Proj)
-    #   }
-    #   names(output$beta.Proj) <- Xlab
-    #   rownames(output$var.Proj) <- colnames(output$var.Proj) <- Xlab
-    #   rownames(output$ci.Proj) <- Xlab
-    #   colnames(output$ci.Proj) <- c("Lower bound", "Upper bound")
-    # }
+        stop("Require N > p >= 1, m >= 2 and compatible finite observations/control runs")
 
-  }
-  ## return the output
-  return(output)
+    Y <- as.numeric(Y)
+    if (
+        !is.numeric(mruns) || length(mruns) != p ||
+        any(!is.finite(mruns) | mruns < 1 | mruns != floor(mruns))
+    )
+        stop("mruns must contain p positive integers")
+    if (
+        !.fp_integer_scalar(degree, 1) ||
+        !.fp_integer_scalar(refinements, 0) ||
+        !.fp_integer_scalar(grid.size, 5) || grid.size %% 2 != 1
+    )
+        stop("Invalid degree, refinements or odd grid.size (>= 5)")
+    if (
+        !is.logical(estimate.factors) || length(estimate.factors) != 1 ||
+        is.na(estimate.factors)
+    )
+        stop("estimate.factors must be TRUE or FALSE")
+    if (!.fp_positive(conf.level) || conf.level >= 1 || !.fp_positive(psi3))
+        stop("Require 0 < conf.level < 1 and psi3 > 0")
+    if (
+        !is.null(factor.grid) && (
+            !is.numeric(factor.grid) || length(factor.grid) < 2 ||
+            any(!is.finite(factor.grid)) || any(factor.grid < 0) ||
+            any(diff(factor.grid) <= 0)
+        )
+    )
+        stop("factor.grid must be finite, nonnegative and strictly increasing")
+
+    # Control covariance and spectral coordinates.
+    D <- diag(1 / mruns, p)
+    S <- crossprod(ctlruns) / m
+    es <- eigen(S, symmetric = TRUE)
+    # Zero eigenvalues are allowed; truncate negative roundoff only.
+    ev <- pmax(es$values, 0)
+    if (max(ev) <= 0)
+        stop("Control covariance must have positive total variation")
+    if (is.null(psi1))
+        psi1 <- 1.05 * max(ev)
+    if (is.null(psi2))
+        psi2 <- max(1.1, 0.7 * psi1)
+    if (
+        !.fp_positive(psi1) || psi1 < max(ev) ||
+        !.fp_positive(psi2) || psi2 <= 1
+    )
+        stop("Require psi1 >= largest sample eigenvalue and psi2 > 1")
+
+    Xt <- crossprod(es$vectors, Xtilde)
+    yt <- as.vector(crossprod(es$vectors, Y))
+
+    # Within-ensemble and control variation.
+    VX <- NULL
+    VZ <- mean(ev)
+    if (estimate.factors) {
+        if (!is.list(ensembles) || length(ensembles) != p || sum(mruns) <= p)
+            stop("Factor estimation requires individual ensembles and positive within-ensemble degrees of freedom")
+        ss <- 0
+        for (i in seq_len(p)) {
+            E <- ensembles[[i]]
+            if (
+                !.fp_finite_matrix(E) ||
+                !identical(dim(E), c(as.integer(mruns[i]), N))
+            )
+                stop("Each ensemble must be an mruns[i] by N finite numeric matrix")
+            if (!isTRUE(all.equal(
+                as.numeric(colMeans(E)),
+                as.numeric(Xtilde[, i]),
+                tolerance = 1e-07
+            )))
+                stop("Ensemble means disagree with Xtilde")
+            ss <- ss + sum(sweep(E, 2, Xtilde[, i])^2)
+        }
+        VX <- ss / (N * (sum(mruns) - p))
+        if (VX <= 0)
+            stop("Within-ensemble variation must be positive")
+    }
+
+    # Construct and filter candidate polynomial coefficients.
+    if (is.null(coefficient.grid)) {
+        if (degree * log(grid.size) > log(1e+05))
+            stop("Default grid exceeds 100000 combinations; supply coefficient.grid or reduce grid.size")
+        ratio <- (max(ev) + 1) / (min(ev) + 1)
+        axes <- lapply(seq_len(degree), function(j) {
+            bound <- ratio^(1 - j)
+            small <- min(bound / 4, (psi2 - 1) / (2 * degree * psi1^j))
+            positive.grid <- exp(seq(
+                log(small),
+                log(bound),
+                length.out = (grid.size - 1) / 2
+            ))
+            c(-rev(positive.grid), 0, positive.grid)
+        })
+        coefficient.grid <- as.matrix(expand.grid(axes))
+    }
+    if (
+        !.fp_finite_matrix(coefficient.grid) ||
+        ncol(coefficient.grid) != degree || nrow(coefficient.grid) < 1
+    )
+        stop("coefficient.grid must have degree columns and at least one finite row")
+    candidates <- lapply(
+        seq_len(nrow(coefficient.grid)),
+        function(i) c(1, coefficient.grid[i, ])
+    )
+    candidates <- candidates[vapply(
+        candidates,
+        .fp_admissible,
+        logical(1),
+        degree = degree,
+        psi1 = psi1,
+        psi2 = psi2,
+        psi3 = psi3
+    )]
+    if (!length(candidates))
+        stop("No admissible polynomials; refine coefficient.grid or bounds")
+
+    # Initialize and refine the inflation factors and polynomial.
+    factors <- c(x = 1, z = 1)
+    if (estimate.factors) {
+        u <- mean(ev)
+        denom <- sum((S - diag(u, N))^2)
+        numerator <- sum(rowSums(ctlruns^2)^2) - m * sum(S^2)
+        q <- if (denom <= 0)
+            1
+        else min(1, max(0, numerator / (m^2 * denom)))
+        if (q <= 0)
+            stop("Normalized Ledoit--Wolf initialization has zero intercept")
+        a0 <- c(1, (1 - q) / (q * u))
+        factors <- .fp_estimate(
+            a0,
+            ev = ev,
+            Xt = Xt,
+            yt = yt,
+            N = N,
+            mruns = mruns,
+            D = D,
+            factor.grid = factor.grid,
+            Y = Y,
+            Xtilde = Xtilde,
+            VX = VX,
+            VZ = VZ
+        )
+    }
+    best <- .fp_select(
+        factors,
+        candidates = candidates,
+        ev = ev,
+        Xt = Xt,
+        yt = yt,
+        N = N,
+        mruns = mruns,
+        D = D,
+        degree = degree,
+        m = m,
+        p = p
+    )
+    if (estimate.factors && refinements > 0)
+        for (i in seq_len(refinements)) {
+            factors <- .fp_estimate(
+                best$a,
+                ev = ev,
+                Xt = Xt,
+                yt = yt,
+                N = N,
+                mruns = mruns,
+                D = D,
+                factor.grid = factor.grid,
+                Y = Y,
+                Xtilde = Xtilde,
+                VX = VX,
+                VZ = VZ
+            )
+            best <- .fp_select(
+                factors,
+                candidates = candidates,
+                ev = ev,
+                Xt = Xt,
+                yt = yt,
+                N = N,
+                mruns = mruns,
+                D = D,
+                degree = degree,
+                m = m,
+                p = p
+            )
+        }
+
+    # Scaling factors, confidence intervals and residual diagnostics.
+    beta <- best$fit$beta
+    variance <- best$mom$Xi / N
+    se <- sqrt(diag(variance))
+    labels <- colnames(Xtilde)
+    if (is.null(labels))
+        labels <- paste0("forcing", seq_len(p))
+
+    names(beta) <- names(se) <- labels
+    dimnames(variance) <- list(labels, labels)
+    ci <- cbind(
+        lower = beta - stats::qnorm((1 + conf.level) / 2) * se,
+        upper = beta + stats::qnorm((1 + conf.level) / 2) * se
+    )
+
+    residual <- as.vector(Y - Xtilde %*% beta)
+    Q <- sum(crossprod(es$vectors, residual)^2 / best$fit$w) / N - best$mom$scale *
+        best$mom$Pi
+    V <- 2 / N * best$mom$scale^2 * best$mom$K
+
+    fit <- list(
+        beta = beta,
+        var = variance,
+        sd = se,
+        ci = ci,
+        sigma.x2 = unname(factors[1]),
+        sigma.z2 = unname(factors[2]),
+        coefficients = best$a,
+        weight = tcrossprod(
+            sweep(es$vectors, 2, sqrt(best$fit$w), "*")
+        ),
+        residuals = residual,
+        standardized.residuals = residual /
+            sqrt(best$mom$scale * diag(S) / factors[2]),
+        diagnostic.stat = Q / sqrt(V),
+        p.value = stats::pnorm(Q / sqrt(V), lower.tail = FALSE),
+        call = Call
+    )
+    class(fit) <- "fingerprint"
+    fit
 }
