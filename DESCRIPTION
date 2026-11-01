@@ -1,24 +1,33 @@
 Package: dacc
 Title: Detection and Attribution Analysis of Climate Change
-Version: 0.0-8
-Date: 2025-12-05
+Version: 0.1.0
+Date: 2026-11-01
 Authors@R: c(
+    person(given = "Haoran", family = "Li", role = "aut"),
     person(given = "Yan", family = "Li",
            email = "yan.4.li@uconn.edu",
            role = c("aut", "cre")),
     person(given = "Kun", family = "Chen", role = "aut"),
     person(given = "Jun", family = "Yan", role = "aut"))
-Description: 
-    Detection and attribution of climate change using methods including optimal fingerprinting via 
-    generalized total least squares or an estimating equation approach (Li et al., 2025, 
-    <doi:10.1175/JCLI-D-24-0193.1>; Ma et al., 2023, <doi:10.1175/JCLI-D-22-0681.1>).
-    Provides shrinkage estimators for the covariance matrix following 
-    Ledoit and Wolf (2004, <doi:10.1016/S0047-259X(03)00096-4>) and 
-    Ledoit and Wolf (2017, <doi:10.2139/ssrn.2383361>).
+Description:
+    Implements the method proposed by Li and Li (2026) for detection and
+    attribution analysis of climate change using polynomial shrinkage under
+    variance heterogeneity. The framework models a common covariance structure
+    for observations, forced simulations and control runs, while allowing their
+    internal variability magnitudes to differ. Estimates forcing scaling factors
+    and variance inflation factors for forced simulations and control runs
+    relative to observations, and selects polynomial shrinkage by minimizing
+    the estimated total asymptotic variance of the scaling factor estimator.
+    Provides asymptotic confidence intervals and approximate residual consistency
+    diagnostics. The equal-variability model is available by fixing both inflation
+    factors at one. Retains earlier total least squares and estimating equation
+    methods (Li et al., 2025, <doi:10.1175/JCLI-D-24-0193.1>;
+    Ma et al., 2023, <doi:10.1175/JCLI-D-22-0681.1>) for comparison and
+    reproducibility, together with covariance shrinkage estimators.
 Depends:
     R (>= 3.5.0)
 Imports:
-    MASS, stats, utils, Iso, pracma, janitor, magrittr, sp, CFtime, ncdf4
+    MASS, stats, graphics, utils, Iso, pracma, janitor, magrittr, sp, CFtime, ncdf4
 License: GPL (>= 3)
 Encoding: UTF-8
 URL: https://github.com/LiYanStat/dacc
