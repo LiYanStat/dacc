@@ -37,7 +37,7 @@ Errors are mutually independent. The inflation factors describe forced-simulatio
 and control variability relative to observations while preserving a common
 covariance structure. Setting both factors to one gives the conventional equal
 variability model. Ensemble means form $\widetilde X$, with
-$D=\operatorname{diag}(1/n_1,\ldots,1/n_p)$.
+$D={diag}(1/n_1,\ldots,1/n_p)$.
 
 The method constructs $W=f(S)$ from $S=m^{-1}\sum_j Z_jZ_j^\top$, using an
 admissible polynomial $f(t)=1+\sum_{j=1}^k\ell_jt^j$, and estimates
