@@ -17,7 +17,8 @@
 )
 }
 \arguments{
-\item{x}{A fitted object returned by \code{fingerprint()}.}
+\item{x}{A fitted object returned by \code{fingerprint()},
+\code{fingerprintPoly()}, or \code{fingerprintLatent()}.}
 \item{index}{Optional numeric vector of observation coordinates, such as time,
 of the same length as the residuals. Defaults to observation index.}
 \item{xlab, ylab}{Axis labels.}
@@ -32,7 +33,7 @@ and reference band.}
 such as \code{col}, \code{cex}, or \code{type}.}
 }
 \description{
-Displays standardized residuals from the method of Li and Li (2026) against
+Displays standardized residuals from polynomial or latent-factor fingerprinting against
 observation index or user-supplied coordinates, with a reference line at zero.
 Patterns can indicate departures from the model.
 }

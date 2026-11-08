@@ -5,7 +5,7 @@
 ##' original estimation and confidence interval procedures. This is the original
 ##' fingerprint function under a new name; its arguments and defaults are retained.
 ##' For new analyses, use fingerprint, which implements the manuscript method with
-##' polynomial shrinkage and optional estimation of variance inflation factors.
+##' polynomial shrinkage and optional estimation of variance inflation coefficients.
 ##'
 ##' @param Xtilde \eqn{n \times p} matrix, signal pattern to be detected.
 ##' @param Y \eqn{n \times 1} matrix, length \eqn{S \times T}, observed climate variable.

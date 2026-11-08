@@ -1,6 +1,6 @@
-if (file.exists(file.path("R", "fingerprint.R"))) {
+if (file.exists(file.path("R", "fingerprintPoly.R"))) {
   source(file.path("R", "fingerprint-internal.R"))
-  source(file.path("R", "fingerprint.R"))
+  source(file.path("R", "fingerprintPoly.R"))
 } else library(dacc)
 set.seed(403)
 N <- 100; sizes <- c(30L, 35L)
@@ -9,7 +9,7 @@ E <- lapply(seq_len(2), function(i) sweep(matrix(rnorm(sizes[i]*N), sizes[i]), 2
 Xm <- vapply(E, colMeans, numeric(N))
 Z <- matrix(rnorm(200*N), 200)
 y <- as.vector(X %*% c(1, 0.7) + rnorm(N))
-fixed <- fingerprint(Xm, y, sizes, Z, degree = 1, estimate.factors = FALSE)
+fixed <- fingerprintPoly(Xm, y, sizes, Z, degree = 1, estimate.inflation = FALSE)
 stopifnot(fixed$sigma.x2 == 1, fixed$sigma.z2 == 1, !any(c("history", "settings", "diagnostic") %in% names(fixed)),
           length(fixed$coefficients) == 2, all(is.finite(fixed$ci)))
 # Independent generalized TLS solution via a whitened augmented SVD.
@@ -31,20 +31,20 @@ reference.Q <- as.numeric(crossprod(fixed$residuals,
   solve(fixed$weight, fixed$residuals)))/N - scale*pi/a
 stopifnot(abs(fixed$diagnostic.stat - reference.Q/sqrt(reference.V)) < 1e-10)
 for (k in c(1L, 2L, 3L)) {
-  fit <- fingerprint(Xm, y, sizes, Z, E, degree = k, grid.size = 5,
-                        factor.grid = seq(0, 4, length.out = 101))
+  fit <- fingerprintPoly(Xm, y, sizes, Z, E, degree = k, grid.size = 5,
+                        inflation.grid = seq(0, 4, length.out = 101))
   stopifnot(length(fit$coefficients) == k+1, !any(c("history", "settings", "diagnostic") %in% names(fit)),
             fit$sigma.x2 > 0, fit$sigma.z2 > 0,
             all(eigen(fit$var, symmetric = TRUE)$values > 0),
             fit$p.value >= 0, fit$p.value <= 1)
 }
 # Fixed factors require no ensembles, including with default cubic degree.
-cubic <- fingerprint(Xm, y, sizes, Z, estimate.factors = FALSE)
+cubic <- fingerprintPoly(Xm, y, sizes, Z, estimate.inflation = FALSE)
 stopifnot(length(cubic$coefficients) == 4, cubic$sigma.x2 == 1)
 # Missing ensembles and an inadmissible decreasing polynomial are rejected.
-stopifnot(inherits(try(fingerprint(Xm, y, sizes, Z), silent = TRUE), "try-error"),
-          inherits(try(fingerprint(Xm, y, sizes, Z, degree = 1,
-            estimate.factors = FALSE, coefficient.grid = matrix(-1)), silent = TRUE), "try-error"))
+stopifnot(inherits(try(fingerprintPoly(Xm, y, sizes, Z), silent = TRUE), "try-error"),
+          inherits(try(fingerprintPoly(Xm, y, sizes, Z, degree = 1,
+            estimate.inflation = FALSE, coefficient.grid = matrix(-1)), silent = TRUE), "try-error"))
 cat("Polynomial fingerprinting tests passed\n")
 # Large TLS bounds must not hide order-one factors on a coarse grid.
 set.seed(12)
@@ -54,10 +54,10 @@ controls <- matrix(rnorm(120*n), 120)
 observed <- truth+rnorm(n)
 members <- list(sweep(matrix(rnorm(30*n),30), 2, truth, "+"))
 means <- matrix(colMeans(members[[1]]), ncol = 1)
-adaptive <- fingerprint(means, observed, 30, controls, members, grid.size = 5)
+adaptive <- fingerprintPoly(means, observed, 30, controls, members, grid.size = 5)
 stopifnot(adaptive$sigma.x2 > 0, adaptive$sigma.x2 < 10)
-singular <- fingerprint(means, observed, 30, controls[1:40, ],
-                           estimate.factors = FALSE, grid.size = 5)
+singular <- fingerprintPoly(means, observed, 30, controls[1:40, ],
+                           estimate.inflation = FALSE, grid.size = 5)
 stopifnot(all(is.finite(singular$ci)))
 
 stopifnot("diagnostic.stat" %in% names(fixed),
@@ -76,8 +76,8 @@ Z <- matrix(rnorm(40*N), 40)
 y <- as.vector(X %*% c(1, 0.7) + rnorm(N))
 stopifnot(nrow(Z) < N, qr(crossprod(Z))$rank < N)
 for (k in c(1L, 3L)) for (estimate in c(FALSE, TRUE)) {
-  fit <- fingerprint(Xm, y, sizes, Z, ensembles = E, degree = k,
-                     estimate.factors = estimate, grid.size = 5)
+  fit <- fingerprintPoly(Xm, y, sizes, Z, ensembles = E, degree = k,
+                     estimate.inflation = estimate, grid.size = 5)
   stopifnot(all(is.finite(fit$ci)), is.finite(fit$p.value),
             min(eigen(fit$weight, symmetric = TRUE)$values) > 0)
 }

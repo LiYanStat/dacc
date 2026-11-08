@@ -1,182 +1,195 @@
-% Generated from R/fingerprint.R; regenerate with roxygen2 when available.
+% Documentation for R/fingerprint.R
 \name{fingerprint}
 \alias{fingerprint}
-\title{Detection and attribution with polynomial shrinkage under variance heterogeneity}
+\title{Detection and attribution of climate change}
 \usage{
-fingerprint(Xtilde, Y, mruns, ctlruns, ensembles = NULL,
-                            degree = 3L, estimate.factors = TRUE,
-                            conf.level = 0.9, coefficient.grid = NULL,
-                            grid.size = 21L, psi1 = NULL, psi2 = NULL,
-                            psi3 = 1e-3, factor.grid = NULL, refinements = 1L)
+fingerprint(
+    Xtilde,
+    Y,
+    mruns,
+    ctlruns,
+    method = c(
+        "poly", "linear", "latent", "EE", "PBC", "TS", "TS.TempSt"
+    ),
+    ...
+)
 }
 \arguments{
-\item{Xtilde}{Numeric N by p matrix of ensemble means.}
-\item{Y}{Numeric observation vector of length N.}
-\item{mruns}{Positive integer ensemble sizes, one per forcing.}
-\item{ctlruns}{Numeric m by N matrix of zero-mean control runs.
-The number of runs m may be smaller than N; the sample covariance may be singular.}
-\item{ensembles}{List of p matrices, each n_i by N, containing individual   forced runs. Required only when estimate.factors is TRUE. Their means   must agree with Xtilde and their row counts with mruns.}
-\item{degree}{Positive integer polynomial degree; default 3, or 1 for linear.}
-\item{estimate.factors}{Estimate both variance inflation factors from data   (default TRUE). FALSE fixes both at one and skips initialization, the   inflation-factor search and refinement.}
-\item{conf.level}{Confidence level for marginal normal intervals.}
-\item{coefficient.grid}{Optional matrix with degree columns, each row   containing ell_1,...,ell_k for f(x)=1+sum(ell_j*x^j).}
-\item{grid.size}{Odd integer number of points per coefficient (at least 5), default 21.   The default grid spans the manuscript bounds with additional points near   zero to resolve the bounded admissible region. At most 100000 combinations.}
-\item{psi1}{Upper spectral domain bound; defaults to 1.05*max(eigen(S)).}
-\item{psi2}{Upper bound on f(psi1); defaults to max(1.1,0.7*psi1).}
-\item{psi3}{Minimum polynomial root separation, default 0.001.}
-\item{factor.grid}{Optional strictly increasing nonnegative grid for sigma_x^2.   Otherwise an adaptive upper bound and a mixed linear/logarithmic grid is used.}
-\item{refinements}{Number of additional factor/shrinkage updates, default 1.}
+\item{Xtilde}{Numeric matrix of forcing ensemble means, one forcing per column.}
+\item{Y}{Observation vector or matrix as required by the selected method.}
+\item{mruns}{Ensemble sizes, one per forcing.}
+\item{ctlruns}{Control runs, with one run per row.}
+\item{method}{Estimation method: "poly" (default), "linear", "latent", "EE", "PBC",
+  "TS", or "TS.TempSt".}
+\item{...}{Arguments for the selected implementation. See fingerprintPoly,
+  fingerprintLatent or fingerprintLegacy. In particular, supply ensembles
+  when estimating variance inflation. For latent selection, use factor.method
+  (PLY or KN) or override the count with n.factors.}
 }
 \description{
-Implements the method proposed in work by Li and Li (2026) for detection
-and attribution (D&A) analysis of climate change using polynomial shrinkage
-under variance heterogeneity. The framework allows forced simulations and
-control runs to have different internal variability magnitudes from observations,
-while sharing a common covariance structure. It estimates forcing scaling factors,
-optionally estimates variance inflation factors, and provides asymptotic confidence
-intervals and approximate residual diagnostics.
-}
-\value{
-An object of class \code{fingerprint}, with a \code{plot()} method for
-standardized residuals.
-A list containing the following components, where \eqn{N} is the observation
-dimension and \eqn{p} is the number of forcings:
-\item{beta}{A named numeric vector of length \eqn{p} of estimated forcing
-scaling factors \eqn{\widehat\beta}.}
-\item{var}{The \eqn{p\times p} estimated covariance matrix of
-\eqn{\widehat\beta}, equal to \eqn{\widehat\Xi(\widehat f)/N}.}
-\item{sd}{A named numeric vector of standard errors, equal to
-\code{sqrt(diag(var))}.}
-\item{ci}{A \eqn{p\times 2} matrix of marginal confidence intervals at
-\code{conf.level}, with columns \code{lower} and \code{upper}.}
-\item{sigma.x2}{The variance inflation factor for individual forced simulations
-relative to observations, estimated from data or fixed at one.}
-\item{sigma.z2}{The variance inflation factor for control runs relative to
-observations, estimated from data or fixed at one.}
-\item{coefficients}{A numeric vector \eqn{(1,\ell_1,\ldots,\ell_k)} defining
-the selected polynomial \eqn{\widehat f(t)=1+\sum_{j=1}^k\ell_jt^j}.
-Coefficients are ordered by ascending power; the intercept is fixed at one.}
-\item{weight}{The \eqn{N\times N} regularized covariance weight matrix
-\eqn{W=\widehat f(S)}. Its inverse is used in the weighted TLS loss.}
-\item{residuals}{A numeric vector of length \eqn{N} of fitted residuals
-\eqn{Y-\widetilde X\widehat\beta}.}
-\item{standardized.residuals}{Residuals divided by their estimated marginal
-standard deviations, computed from
-\eqn{(1+\widehat\sigma_x^2\widehat\beta^\top D\widehat\beta)
-S_{ii}/\widehat\sigma_z^2}.}
-\item{diagnostic.stat}{The standardized residual consistency statistic \eqn{\widehat Q/\sqrt{\widehat V}}, as defined in Li and Li (2026).}
-\item{p.value}{The approximate upper-tail standard normal p-value for residual
-consistency. Factor estimation and shrinkage selection can affect its calibration.}
-\item{call}{The matched function call.}
+Common entry point for the detection and attribution methods in dacc.
+Select polynomial shrinkage under variance heterogeneity, latent-factor
+fingerprinting, estimating equations, or two-sample and bootstrap TLS procedures.
 }
 \details{
-\subsection{Model}{
-Li and Li (2026) extend optimal fingerprinting to allow different magnitudes
-of internal variability in observations, forced simulations and control runs:
-\deqn{Y=X\beta+\epsilon,\qquad \epsilon\sim N(0,\Sigma),}
-\deqn{\widetilde X_{ik}=X_i+\eta_{ik},\qquad
-\eta_{ik}\sim N(0,\sigma_x^2\Sigma),\quad k=1,\ldots,n_i,}
-\deqn{Z_j\sim N(0,\sigma_z^2\Sigma),\quad j=1,\ldots,m.}
-Here \eqn{Y\in\mathbb{R}^N} is the observed climate response,
-\eqn{X=(X_1,\ldots,X_p)} contains the true responses to \eqn{p} forcings,
-and \eqn{\beta} contains their scaling factors. The errors are mutually
-independent and share the covariance structure \eqn{\Sigma}. The factors
-\eqn{\sigma_x^2} and \eqn{\sigma_z^2} measure simulation variability relative
-to observations; setting both to one gives the conventional equal-variability model.
+The \code{method} argument selects both the scaling-factor estimator and its
+uncertainty procedure. Method-specific arguments are passed through \code{...}.
+\describe{
+\item{\code{"poly"}}{Polynomial-shrinkage fingerprinting proposed by Li and Li
+(2026a) in \emph{Adaptable Fingerprinting with Nonlinear Shrinkage for Climate
+Change Detection and Attribution under Variance Heterogeneity}.
 
-The inputs \code{Xtilde} and \code{mruns} specify the ensemble means
-\eqn{\widetilde X_i=n_i^{-1}\sum_k\widetilde X_{ik}} and ensemble sizes
-\eqn{n_i}. Write \eqn{D=\operatorname{diag}(1/n_1,\ldots,1/n_p)}.
+A polynomial transformation of the control covariance supplies the covariance
+weight for weighted total least squares (TLS). Polynomial coefficients minimize
+the estimated total asymptotic variance of the scaling-factor estimator;
+\code{degree} defaults to 3. Variance inflation coefficients are estimated by
+default. Marginal confidence intervals use the estimated asymptotic covariance.}
+\item{\code{"linear"}}{Linear-shrinkage fingerprinting obtained as the
+degree-one specialization of the method proposed by Li and Li (2026a) in
+\emph{Adaptable Fingerprinting with Nonlinear Shrinkage for Climate Change
+Detection and Attribution under Variance Heterogeneity}.
+
+A degree-one polynomial supplies the covariance weight for weighted TLS.
+Its coefficient minimizes the estimated total asymptotic scaling-factor
+variance; any supplied \code{degree} is overridden with 1. Variance inflation
+coefficients are estimated by default. Marginal confidence intervals use the
+same asymptotic covariance construction as \code{"poly"}. This weight-selection
+criterion differs from the covariance-loss criterion of Ledoit and Wolf (2004).}
+\item{\code{"latent"}}{Latent-factor fingerprinting proposed by Li and Li
+(2026b) in \emph{Fingerprint Analysis for Climate Change Detection and
+Attribution under a Latent Factor Model}.
+
+A spiked covariance model represents latent variability plus isotropic noise.
+Bias-corrected spike strengths, noise variance and estimated eigenvector
+alignments determine a precision weight, selected by minimizing estimated total
+asymptotic scaling-factor variance. The factor count uses KN by default
+(Kritchman and Nadler, 2008), or PLY (Passemier et al., 2017), unless
+\code{n.factors} is supplied. Variance inflation coefficients are estimated by
+default. Scaling factors use precision-weighted TLS, and marginal confidence
+intervals use the latent model's estimated asymptotic covariance.}
+\item{\code{"EE"}}{Estimating-equation fingerprinting developed by Ma et al.
+(2023) in \emph{Optimal Fingerprinting with Estimating Equations} and refined
+by Li et al. (2025) in \emph{Improved Optimal Fingerprinting Based on Estimating
+Equations Reaffirms Anthropogenic Effect on Global Warming}.
+
+The estimating equations correct for measurement error in forcing ensemble
+means. A pooled spatial covariance supplies the working weight, with a
+block-diagonal temporal-independence structure for multiple time steps.
+Marginal confidence intervals use an estimating-equation variance estimate
+and a normal approximation. Options include variance calibration through
+\code{cal.a}, linear contrasts through \code{Proj}, missing-response handling,
+and block-bootstrap variance estimation.}
+\item{\code{"PBC"}}{Parametric-bootstrap-calibrated fingerprinting proposed
+by Li et al. (2021) in \emph{Uncertainty in Optimal Fingerprinting Is
+Underestimated}.
+
+A regularized covariance weight is used for TLS, with linear shrinkage for
+\code{cov.method = "l2"} or nonlinear minimum-variance shrinkage for
+\code{cov.method = "mv"}. Parametric replicates regenerate the response,
+forcing ensemble means and controls from the fitted Gaussian model and
+re-estimate the weight. Bootstrap and normal-approximation TLS intervals are
+returned together with standard-error calibration ratios in \code{pbc.ratio};
+the ratios are supplied separately rather than applied to the interval endpoints.}
+\item{\code{"TS"}}{Two-sample regularized fingerprinting described by
+Ribes et al. (2013) in \emph{Application of Regularised Optimal Fingerprinting
+to Attribution. Part I: Method, Properties and Idealised Analysis}, using the
+TLS framework of Allen and Stott (2003).
+
+One control sample estimates the covariance weight used for TLS; a second
+sample, \code{ctlruns.bhvar}, supplies the variance estimate. Marginal confidence
+intervals use a normal approximation. Nonparametric bootstrap intervals are
+also returned, based on resampled coordinates of the transformed regression.
+Li et al. (2021) assess the uncertainty properties of the two-sample procedure.}
+\item{\code{"TS.TempSt"}}{Two-sample fingerprinting with a temporally
+independent working covariance, combining the framework described by Ribes
+et al. (2013) in \emph{Application of Regularised Optimal Fingerprinting to
+Attribution. Part I: Method, Properties and Idealised Analysis} with covariance
+pooling used by Ma et al. (2023) and Li et al. (2025).
+
+Control data are pooled across time to estimate a common spatial covariance,
+which is repeated in diagonal temporal blocks and used as the TLS covariance
+weight. A second control sample supplies the variance estimate. Marginal
+normal-approximation intervals and nonparametric bootstrap intervals follow
+the same construction as \code{"TS"}.}
 }
-\subsection{Polynomial shrinkage and scaling factors}{
-The control covariance \eqn{S=m^{-1}\sum_j Z_jZ_j^\top}. It is regularized using
-\deqn{W=f(S),\qquad f(t)=1+\sum_{j=1}^k\ell_jt^j.}
-Since \eqn{f(0)=1} and \eqn{f} is nondecreasing on the sample spectrum,
-\eqn{W} is positive definite even when \eqn{S} is singular.
-The degree \eqn{k} is controlled by \code{degree}: one gives linear shrinkage,
-while three is recommended in Li and Li (2026). Candidate polynomials must be
-nondecreasing on \eqn{[0,\psi_1]}, satisfy \eqn{f(\psi_1)\leq\psi_2}, and
-have roots separated by at least \eqn{\psi_3}.
 
-For a given \eqn{W} and \eqn{s=\sigma_x^2}, the scaling factors minimize
-the weighted total least squares criterion
-\deqn{\widehat\beta(s,W)=\arg\min_\beta
-\frac{(Y-\widetilde X\beta)^\top W^{-1}(Y-\widetilde X\beta)}
-{1+s\beta^\top D\beta}.}
-The polynomial coefficients are selected by minimizing the estimated total
-asymptotic variance \eqn{\operatorname{tr}\widehat\Xi(f)} over an admissible
-grid. The default uses 21 points per coefficient; \code{grid.size} and
-\code{coefficient.grid} control the search resolution. This is a finite-grid
-approximation to the optimization in Li and Li (2026).
+For \code{"poly"}, \code{"linear"} and \code{"latent"},
+\code{estimate.inflation = FALSE} fixes both variance inflation coefficients at
+one; otherwise individual forcing members must be supplied in \code{ensembles}.
+The returned \code{weight} is a covariance weight for polynomial/linear fits
+and a precision weight for latent fits. The quadratic TLS criterion uses the
+inverse of the former and the latter directly. These fits support the common
+standardized-residual \code{plot()} method. See the implementation help pages
+for the residual diagnostics and their calibration limitations.
+
+The methods \code{"EE"}, \code{"PBC"}, \code{"TS"} and \code{"TS.TempSt"}
+are implemented by \code{fingerprintLegacy} with
+the selected method passed unchanged. \code{ctlruns} supplies
+\code{ctlruns.sigma}; \code{ctlruns.bhvar} defaults to the same sample for
+compatibility. Supply a separate second control sample for a two-sample
+analysis. Arguments \code{S} and \code{T} describe the spatial and temporal
+dimensions used by \code{"EE"} and \code{"TS.TempSt"}. Set \code{B} to a
+positive number of bootstrap replicates for \code{"PBC"}, \code{"TS"} and
+\code{"TS.TempSt"}. The modern options \code{degree}, \code{estimate.inflation}
+and latent-factor selection controls do not apply to these four methods.
 }
-\subsection{Estimation of variance inflation factors and inference}{
-The method estimates both variance inflation factors, \eqn{\sigma_x^2} and
-\eqn{\sigma_z^2}, to account for differences in internal variability between
-observations, forced simulations and control runs. This is the default behavior
-(\code{estimate.factors = TRUE}). Estimation uses the individual forced runs
-in \code{ensembles}, in addition to the ensemble means and control runs.
-
-The within-ensemble variation estimates the marginal variability of the
-forced simulations:
-\deqn{V_X=\frac{\sum_{i=1}^p\sum_{k=1}^{n_i}
-\|\widetilde X_{ik}-\widetilde X_i\|^2}{N(\sum_i n_i-p)}.}
-For a given weight matrix \eqn{W}, the forced-simulation inflation factor is
-estimated by matching this variation to the residual variation implied by
-candidate values of \eqn{\sigma_x^2}:
-\deqn{\widehat\sigma_x^2=\arg\min_{s\in\mathcal G}
-\left|\frac{s\|Y-\widetilde X\widehat\beta(s,W)\|^2}
-{N\{1+s\widehat\beta(s,W)^\top D\widehat\beta(s,W)\}}-V_X\right|,}
-where \eqn{\mathcal G} is the grid supplied through \code{factor.grid} or
-constructed automatically. The control-run inflation factor is then estimated
-from the relative variation in controls and forced simulations:
-\deqn{\widehat\sigma_z^2=\widehat\sigma_x^2\frac{V_Z}{V_X},
-\qquad V_Z=\operatorname{tr}(S)/N.}
-
-Initial estimates of both factors are obtained using normalized Ledoit--Wolf
-weights. These estimates are used to select the polynomial shrinkage rule.
-The factors are then re-estimated using the selected weight matrix, and the
-polynomial is reselected using the updated factors. The number of these
-additional updates is controlled by \code{refinements} (default one).
-The final estimates are returned as \code{sigma.x2} and \code{sigma.z2}.
-
-As an optional restriction, \code{estimate.factors = FALSE} fixes both factors
-at one, imposing equal variability across observations and simulations.
-This bypasses factor estimation and refinement, so individual forced runs
-are unnecessary. Polynomial selection and scaling-factor inference remain
-part of the procedure.
-
-The estimated inflation factors enter both the final scaling-factor estimate
-and its estimated covariance \eqn{\widehat\Xi(\widehat f)/N}. Confidence
-intervals use the resulting asymptotic normal approximation. The residual
-consistency statistic and its approximate upper-tail normal p-value are
-returned as \code{diagnostic.stat} and \code{p.value}. Their reference
-calibration can be affected by estimation of the inflation factors and
-selection of the shrinkage rule. Missing observations are not supported.
+\value{
+The result returned by the selected implementation. Polynomial and
+  latent fits inherit from class fingerprint and support plot(). The EE and
+  TLS procedures retain their implementation-specific list structures.
 }
+\references{
+Li, H. and Li, Y. (2026a). Adaptable Fingerprinting with Nonlinear Shrinkage
+for Climate Change Detection and Attribution under Variance Heterogeneity.
+Manuscript.
+
+Li, H. and Li, Y. (2026b). Fingerprint Analysis for Climate Change Detection
+and Attribution under a Latent Factor Model. Manuscript.
+
+Ma, S., Wang, T., Yan, J. and Zhang, X. (2023). Optimal Fingerprinting with
+Estimating Equations. \emph{Journal of Climate}, \bold{36}, 7109--7122.
+\doi{10.1175/JCLI-D-22-0681.1}.
+
+Li, Y., Wang, T., Yan, J. and Zhang, X. (2025). Improved Optimal Fingerprinting
+Based on Estimating Equations Reaffirms Anthropogenic Effect on Global Warming.
+\emph{Journal of Climate}, \bold{38}, 1779--1790.
+\doi{10.1175/JCLI-D-24-0193.1}.
+
+Li, Y., Chen, K., Yan, J. and Zhang, X. (2021). Uncertainty in Optimal
+Fingerprinting Is Underestimated. \emph{Environmental Research Letters},
+\bold{16}, 084043.
+
+Allen, M. R. and Stott, P. A. (2003). Estimating Signal Amplitudes in Optimal
+Fingerprinting, Part I: Theory. \emph{Climate Dynamics}, \bold{21}, 477--491.
+\doi{10.1007/s00382-003-0313-9}.
+
+Ribes, A., Planton, S. and Terray, L. (2013). Application of Regularised
+Optimal Fingerprinting to Attribution. Part I: Method, Properties and Idealised
+Analysis. \emph{Climate Dynamics}, \bold{41}, 2817--2836.
+\doi{10.1007/s00382-013-1735-7}.
+
+Ledoit, O. and Wolf, M. (2004). A Well-Conditioned Estimator for
+Large-Dimensional Covariance Matrices. \emph{Journal of Multivariate Analysis},
+\bold{88}, 365--411. \doi{10.1016/S0047-259X(03)00096-4}.
+
+Kritchman, S. and Nadler, B. (2008). Determining the Number of Components in a
+Factor Model from Limited Noisy Data. \emph{Chemometrics and Intelligent
+Laboratory Systems}, \bold{94}, 19--32.
+
+Passemier, D., Li, Z. and Yao, J. (2017). On Estimation of the Noise Variance
+in High Dimensional Probabilistic Principal Component Analysis.
+\emph{Journal of the Royal Statistical Society: Series B}, \bold{79}, 51--67.
 }
-\references{Li, H. and Li, Y. (2026). Adaptable Fingerprinting with Nonlinear Shrinkage for Climate Change Detection and Attribution under Variance Heterogeneity. Manuscript.}
 \examples{
 set.seed(12)
 N <- 60
-signal <- 3 * sin(seq_len(N) / 6)
-ensembles <- list(sweep(matrix(rnorm(30 * N), 30), 2, signal, "+"))
-Xtilde <- matrix(colMeans(ensembles[[1]]), ncol = 1)
+X <- matrix(3 * sin(seq_len(N) / 6), ncol = 1)
 Z <- matrix(rnorm(120 * N), nrow = 120)
-Y <- signal + rnorm(N)
-
-fit <- fingerprint(Xtilde, Y, mruns = 30, ctlruns = Z,
-                   ensembles = ensembles)
-
-# Observation index, with the default 95% normal reference band.
+Y <- as.vector(X + rnorm(N))
+fit <- fingerprint(X, Y, mruns = 30, ctlruns = Z,
+                   method = "linear", estimate.inflation = FALSE)
+fit$ci
 plot(fit)
-
-# Use time coordinates and customize the appearance.
-years <- 1961 + seq_len(N) - 1
-plot(fit, index = years, xlab = "Year", col = "steelblue",
-     band.col = "grey90")
-
-# Change the pointwise reference level to 90%.
-plot(fit, reference.level = 0.90)
 }
-
-\seealso{\code{\link{plot.fingerprint}} for residual plots; \code{\link{fingerprintLegacy}} for earlier methods and their confidence intervals.}
+\seealso{\code{\link{fingerprintPoly}}, \code{\link{fingerprintLatent}},
+\code{\link{fingerprintLegacy}}, \code{\link{plot.fingerprint}}}

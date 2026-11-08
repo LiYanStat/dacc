@@ -1,5 +1,5 @@
 # Internal helpers for polynomial fingerprinting.
-# Not exported. Numerical inputs are passed explicitly by fingerprint().
+# Not exported. Numerical inputs are passed explicitly by fingerprintPoly().
 
 # Validate a finite integer scalar.
 .fp_integer_scalar <- function(x, lower) is.numeric(x) && length(x) == 1L && is.finite(x) &&
@@ -129,10 +129,10 @@
         VX)
 }
 
-# Search the variance inflation grid and recover both factors.
-.fp_estimate <- function(a, ev, Xt, yt, N, mruns, D, factor.grid, Y, Xtilde, VX,
+# Search the variance inflation grid and recover both coefficients.
+.fp_estimate <- function(a, ev, Xt, yt, N, mruns, D, inflation.grid, Y, Xtilde, VX,
     VZ) {
-    grid <- factor.grid
+    grid <- inflation.grid
     if (is.null(grid)) {
         w <- .fp_poly(a, ev)
         U <- sweep(Xt, 2, sqrt(mruns), "*")
@@ -160,22 +160,22 @@
         N = N, mruns = mruns, D = D, Y = Y, Xtilde = Xtilde, VX = VX)
     idx <- which.min(losses)
     if (!is.finite(losses[idx]) || grid[idx] <= 0)
-        stop("No positive, finite inflation-factor estimate on grid")
+        stop("No positive, finite inflation-coefficient estimate on grid")
     if (idx >= 0.95 * length(grid))
-        warning("Inflation estimate near upper grid endpoint; enlarge factor.grid")
+        warning("Inflation estimate near upper grid endpoint; enlarge inflation.grid")
     c(x = grid[idx], z = grid[idx] * VZ/VX)
 }
 
 # Select the admissible polynomial with smallest total variance.
-.fp_select <- function(factors, candidates, ev, Xt, yt, N, mruns, D, degree, m,
+.fp_select <- function(inflation, candidates, ev, Xt, yt, N, mruns, D, degree, m,
     p) {
     best <- NULL
     score <- Inf
     for (a in candidates) {
         obj <- tryCatch({
-            fit <- .fp_tls(a, factors[1], ev = ev, Xt = Xt, yt = yt, N = N, mruns = mruns,
+            fit <- .fp_tls(a, inflation[1], ev = ev, Xt = Xt, yt = yt, N = N, mruns = mruns,
                 D = D)
-            mom <- .fp_moments(a, factors[1], factors[2], fit, degree = degree,
+            mom <- .fp_moments(a, inflation[1], inflation[2], fit, degree = degree,
                 N = N, m = m, ev = ev, Xt = Xt, D = D, p = p, mruns = mruns)
             list(a = a, fit = fit, mom = mom, score = sum(diag(mom$Xi)))
         }, error = function(e) NULL)
