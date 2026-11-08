@@ -1,6 +1,6 @@
 Package: dacc
 Title: Detection and Attribution Analysis of Climate Change
-Version: 0.2.0
+Version: 0.1.0
 Date: 2026-11-08
 Authors@R: c(
     person(given = "Haoran", family = "Li", role = "aut"),
