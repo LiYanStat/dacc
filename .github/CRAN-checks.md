@@ -29,5 +29,8 @@ record the checked commit, actual R and operating-system versions, and the
 errors, warnings, and NOTEs from each 00check.log. A green Actions run alone
 does not establish that all CRAN requirements are satisfied.
 
-No checks have been run on GitHub yet for this workflow. This setup does not
-submit the package to CRAN or upload it to win-builder.
+The first run completed successfully on 2026-11-08 for commit c8cda2e, with
+Status: OK in all four jobs:
+https://github.com/LiYanStat/dacc/actions/runs/42532617190
+See cran-comments.md for the verified environment details and remaining checks.
+This setup does not submit the package to CRAN or upload it to win-builder.

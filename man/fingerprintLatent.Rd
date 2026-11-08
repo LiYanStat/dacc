@@ -208,7 +208,7 @@ in the quadratic loss.}
 \item{call}{The matched function call.}
 }
 \references{
-Li, H. and Li, Y. (2026). Fingerprint Analysis for Climate Change Detection and Attribution under a Latent Factor Model. Manuscript.
+Li, H. and Li, Y. (2026). Fingerprint Analysis for Climate Change Detection and Attribution under a Latent Factor Model. arXiv preprint. \url{https://arxiv.org/abs/2609.13488}.
 }
 \seealso{
 \code{\link{fingerprint}}, \code{\link{fingerprintPoly}}, \code{\link{plot.fingerprint}}

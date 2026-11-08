@@ -167,7 +167,7 @@ calibration can be affected by estimation of the inflation coefficients and
 selection of the shrinkage rule. Missing observations are not supported.
 }
 }
-\references{Li, H. and Li, Y. (2026). Adaptable Fingerprinting with Nonlinear Shrinkage for Climate Change Detection and Attribution under Variance Heterogeneity. Manuscript.}
+\references{Li, H. and Li, Y. (2026). Adaptable Fingerprinting with Nonlinear Shrinkage for Climate Change Detection and Attribution under Variance Heterogeneity. arXiv preprint. \url{https://arxiv.org/abs/2608.12496}.}
 \examples{
 set.seed(12)
 N <- 60

@@ -12,8 +12,10 @@ Authors@R: c(
 Description:
     Detection and attribution analysis of climate change using errors-in-variables
     regression. Implements the polynomial shrinkage framework under variance
-    heterogeneity and the latent factor framework proposed in work by Li and Li
-    (2026). Estimates forcing scaling factors and variance inflation coefficients for
+    heterogeneity proposed by Li and Li (2026)
+    <https://arxiv.org/abs/2608.12496> and the latent factor framework proposed
+    by Li and Li (2026) <https://arxiv.org/abs/2609.13488>. Estimates forcing
+    scaling factors and variance inflation coefficients for
     forced simulations and control runs relative to observations. Selects
     polynomial covariance weights or bias-corrected spiked precision weights by
     minimizing estimated total asymptotic scaling factor variance, and provides
