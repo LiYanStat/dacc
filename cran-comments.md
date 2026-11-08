@@ -1,11 +1,15 @@
 ## Update
 
-This updates dacc from CRAN version 0.0-7 to version 0.2.0. The update adds
+This updates dacc from CRAN version 0.0-7 to version 0.1.0. The update adds
 polynomial shrinkage and latent factor methods, a unified method interface,
 and residual plots. The original procedures remain available through explicit
 method choices and fingerprintLegacy(). See NEWS.md for interface changes.
 
 Yan Li remains the designated maintainer.
+
+The release version was subsequently changed from 0.2.0 to 0.1.0. The check
+results below refer to the previously numbered 0.2.0 source; numerical code
+is unchanged. Recheck the final 0.1.0 tarball before submission.
 
 ## Verified check environment
 
@@ -43,3 +47,4 @@ by the local full check, rather than these GitHub results.
 
 The CRAN source package index retrieved on 2026-11-08 lists no reverse
 dependencies, including suggested or enhanced dependencies.
+
