@@ -141,10 +141,10 @@ The result returned by the selected implementation. Polynomial and
 \references{
 Li, H. and Li, Y. (2026a). Adaptable Fingerprinting with Nonlinear Shrinkage
 for Climate Change Detection and Attribution under Variance Heterogeneity.
-Manuscript.
+arXiv preprint. \url{https://arxiv.org/abs/2608.12496}.
 
 Li, H. and Li, Y. (2026b). Fingerprint Analysis for Climate Change Detection
-and Attribution under a Latent Factor Model. Manuscript.
+and Attribution under a Latent Factor Model. arXiv preprint. \url{https://arxiv.org/abs/2609.13488}.
 
 Ma, S., Wang, T., Yan, J. and Zhang, X. (2023). Optimal Fingerprinting with
 Estimating Equations. \emph{Journal of Climate}, \bold{36}, 7109--7122.

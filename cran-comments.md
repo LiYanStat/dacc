@@ -1,25 +1,49 @@
-## CRAN Submission Comments
+## Update
 
-This is a re-submission of **dacc**.
+This updates dacc from CRAN version 0.0-7 to version 0.2.0. The update adds
+polynomial shrinkage and latent factor methods, a unified method interface,
+and residual plots. The original procedures remain available through explicit
+method choices and fingerprintLegacy(). See NEWS.md for interface changes.
 
-The previous version was archived on CRAN on 2025-09-08 because reported
-errors were not corrected in time. This update fixes those issues and now
-passes all CRAN checks with 0 ERRORs and 0 WARNINGs.
+Yan Li remains the designated maintainer.
 
-### Changes since archival
+## Verified check environment
 
-- Fixed test failures on R-devel that caused the package to be archived.
-- Standardized `DESCRIPTION` text and citation formatting.
-- Removed the `Date` field to avoid the "Date field is over a month old" NOTE.
-- Added `inst/WORDLIST` to whitelist proper names ("Ledoit", "et", "al")
-  and avoid spell-check NOTEs.
-- Verified examples run within CRAN time limits.
+- Local macOS Tahoe 26.6, Apple Silicon, R 4.6.1 (2026-06-24).
+- Fresh source build followed by `R CMD check --as-cran dacc_0.2.0.tar.gz`.
+- Result: Status: OK (0 errors, 0 warnings, 0 NOTEs).
+- Installation, examples, all five test scripts, and PDF/HTML manual checks passed.
+- CRAN incoming feasibility and DESCRIPTION checks passed.
 
-### Check environments
+HTML validation and mathematical rendering were enabled using temporary
+HTML Tidy 5.8.0 and V8 8.2.1 installations. No manual checks were skipped.
+The full check was repeated after converting the DESCRIPTION arXiv citations
+to their arXiv DOI identifiers; incoming feasibility then passed without a NOTE.
 
-- Local macOS (R 4.4.1): `R CMD check --as-cran` — **OK**
-- win-builder (R-devel, R-release): **OK**
-- GitHub Actions CI (Ubuntu, Windows, macOS; R-oldrel, R-release, R-devel): **OK**
+## Verified GitHub Actions results
 
-There are no remaining NOTEs except the expected message that this is a
-"new submission" for an archived package.
+Run: https://github.com/LiYanStat/dacc/actions/runs/42533622340
+Checked commit: 3c2a62d9561e1e1aa5cb5d8cf6efef43c2207838 (2026-11-08).
+
+All four jobs completed with Status: OK (0 errors, 0 warnings, 0 NOTEs):
+
+- Ubuntu 26.04.1 LTS, R 4.6.2.
+- Ubuntu 26.04.1 LTS, R-devel (2026-11-07 r90850).
+- Windows Server 2022 x64, R 4.6.2 UCRT.
+- Windows Server 2022 x64, R-devel (2026-11-07 r90850 UCRT).
+
+These jobs used --as-cran --no-manual and disabled CRAN incoming network
+checks through the r-lib check action defaults. They do not establish that
+HTML validation or PDF manual checks ran. The local full check above covers
+PDF and HTML manual validation and incoming feasibility. The subsequent
+DESCRIPTION-only conversion from arXiv URLs to arXiv DOI identifiers is covered
+by the local full check, rather than these GitHub results.
+
+## Reverse dependencies
+
+The CRAN source package index retrieved on 2026-11-08 lists no reverse
+dependencies, including suggested or enhanced dependencies.
+
+## Outstanding before submission
+
+- Have the designated maintainer review and approve the release and submission.

@@ -144,7 +144,7 @@
 ##' \code{inflation.grid} only approximates this equality. With inflation coefficients fixed at one,
 ##' the algebraic degeneracy does not apply. Missing values are unsupported.
 ##' }
-##' @references Li, H. and Li, Y. (2026). Fingerprint Analysis for Climate Change Detection and Attribution under a Latent Factor Model. Manuscript.
+##' @references Li, H. and Li, Y. (2026). Fingerprint Analysis for Climate Change Detection and Attribution under a Latent Factor Model. arXiv preprint. \url{https://arxiv.org/abs/2609.13488}.
 ##' @param Xtilde Numeric \eqn{N\times p} matrix of forcing ensemble means.
 ##' @param Y Numeric observation vector of length \eqn{N}.
 ##' @param mruns Positive integer ensemble sizes \eqn{n_i}, one per forcing.

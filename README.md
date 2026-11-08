@@ -159,9 +159,9 @@ linear.equal <- fingerprint(Xtilde, Y, n, Z, method = "linear",
   Fingerprinting Is Underestimated*. Environmental Research Letters, 16, 084043.
 - Li, H. and Li, Y. (2026a). *Adaptable Fingerprinting with Nonlinear Shrinkage
   for Climate Change Detection and Attribution under Variance Heterogeneity*.
-  Manuscript.
+  [arXiv:2608.12496](https://arxiv.org/abs/2608.12496).
 - Li, H. and Li, Y. (2026b). *Fingerprint Analysis for Climate Change Detection
-  and Attribution under a Latent Factor Model*. Manuscript.
+  and Attribution under a Latent Factor Model*. [arXiv:2609.13488](https://arxiv.org/abs/2609.13488).
 - Kritchman, S. and Nadler, B. (2008). *Determining the Number of Components in
   a Factor Model from Limited Noisy Data*. Chemometrics and Intelligent
   Laboratory Systems, 94, 19–32.
