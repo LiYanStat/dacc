@@ -7,10 +7,6 @@ method choices and fingerprintLegacy(). See NEWS.md for interface changes.
 
 Yan Li remains the designated maintainer.
 
-The release version was subsequently changed from 0.2.0 to 0.1.0. The check
-results below refer to the previously numbered 0.2.0 source; numerical code
-is unchanged. Recheck the final 0.1.0 tarball before submission.
-
 ## Verified check environment
 
 - Local macOS Tahoe 26.6, Apple Silicon, R 4.6.1 (2026-06-24).
