@@ -11,18 +11,19 @@ Yan Li remains the designated maintainer.
 
 - Local macOS Tahoe 26.6, Apple Silicon, R 4.6.1 (2026-06-24).
 - Fresh source build followed by `R CMD check --as-cran dacc_0.2.0.tar.gz`.
-- Result: 0 errors, 0 warnings, 1 NOTE.
-- Installation, examples, all five test scripts, and PDF manual creation passed.
+- Result: Status: OK (0 errors, 0 warnings, 0 NOTEs).
+- Installation, examples, all five test scripts, and PDF/HTML manual checks passed.
 - CRAN incoming feasibility and DESCRIPTION checks passed.
 
-The NOTE concerns local HTML checking tools: HTML Tidy is too old and the
-optional V8 package is unavailable, so HTML validation and mathematical
-rendering checks were skipped. These checks remain to be completed.
+HTML validation and mathematical rendering were enabled using temporary
+HTML Tidy 5.8.0 and V8 8.2.1 installations. No manual checks were skipped.
+The full check was repeated after converting the DESCRIPTION arXiv citations
+to their arXiv DOI identifiers; incoming feasibility then passed without a NOTE.
 
 ## Verified GitHub Actions results
 
-Run: https://github.com/LiYanStat/dacc/actions/runs/42532617190
-Checked commit: c8cda2e4e01b1f3cf5345f36567611204fca354f (2026-11-08).
+Run: https://github.com/LiYanStat/dacc/actions/runs/42533622340
+Checked commit: 3c2a62d9561e1e1aa5cb5d8cf6efef43c2207838 (2026-11-08).
 
 All four jobs completed with Status: OK (0 errors, 0 warnings, 0 NOTEs):
 
@@ -34,8 +35,9 @@ All four jobs completed with Status: OK (0 errors, 0 warnings, 0 NOTEs):
 These jobs used --as-cran --no-manual and disabled CRAN incoming network
 checks through the r-lib check action defaults. They do not establish that
 HTML validation or PDF manual checks ran. The local full check above covers
-PDF manual generation and incoming feasibility. Manuscript URLs were added
-after this checked commit and are not covered by these results.
+PDF and HTML manual validation and incoming feasibility. The subsequent
+DESCRIPTION-only conversion from arXiv URLs to arXiv DOI identifiers is covered
+by the local full check, rather than these GitHub results.
 
 ## Reverse dependencies
 
@@ -44,6 +46,4 @@ dependencies, including suggested or enhanced dependencies.
 
 ## Outstanding before submission
 
-- Complete HTML validation and mathematical rendering checks.
-- Recheck the final submission tarball after the manuscript URL updates.
 - Have the designated maintainer review and approve the release and submission.
