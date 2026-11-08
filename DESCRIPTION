@@ -1,7 +1,7 @@
 Package: dacc
 Title: Detection and Attribution Analysis of Climate Change
-Version: 0.1.0
-Date: 2026-11-01
+Version: 0.2.0
+Date: 2026-11-08
 Authors@R: c(
     person(given = "Haoran", family = "Li", role = "aut"),
     person(given = "Yan", family = "Li",
@@ -10,24 +10,24 @@ Authors@R: c(
     person(given = "Kun", family = "Chen", role = "aut"),
     person(given = "Jun", family = "Yan", role = "aut"))
 Description:
-    Implements the method proposed by Li and Li (2026) for detection and
-    attribution analysis of climate change using polynomial shrinkage under
-    variance heterogeneity. The framework models a common covariance structure
-    for observations, forced simulations and control runs, while allowing their
-    internal variability magnitudes to differ. Estimates forcing scaling factors
-    and variance inflation factors for forced simulations and control runs
-    relative to observations, and selects polynomial shrinkage by minimizing
-    the estimated total asymptotic variance of the scaling factor estimator.
-    Provides asymptotic confidence intervals and approximate residual consistency
-    diagnostics. The equal-variability model is available by fixing both inflation
-    factors at one. Retains earlier total least squares and estimating equation
-    methods (Li et al., 2025, <doi:10.1175/JCLI-D-24-0193.1>;
+    Detection and attribution analysis of climate change using errors-in-variables
+    regression. Implements the polynomial shrinkage framework under variance
+    heterogeneity and the latent factor framework proposed in work by Li and Li
+    (2026). Estimates forcing scaling factors and variance inflation coefficients for
+    forced simulations and control runs relative to observations. Selects
+    polynomial covariance weights or bias-corrected spiked precision weights by
+    minimizing estimated total asymptotic scaling factor variance, and provides
+    asymptotic confidence intervals and residual diagnostics. Also retains
+    earlier total least squares and estimating equation procedures
+    (Li et al., 2025, <doi:10.1175/JCLI-D-24-0193.1>;
     Ma et al., 2023, <doi:10.1175/JCLI-D-22-0681.1>) for comparison and
     reproducibility, together with covariance shrinkage estimators.
 Depends:
     R (>= 3.5.0)
 Imports:
     MASS, stats, graphics, utils, Iso, pracma, janitor, magrittr, sp, CFtime, ncdf4
+Suggests:
+    RMTstat
 License: GPL (>= 3)
 Encoding: UTF-8
 URL: https://github.com/LiYanStat/dacc

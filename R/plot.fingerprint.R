@@ -1,9 +1,10 @@
 ##' Plot standardized fingerprinting residuals
 ##'
-##' Displays standardized residuals from the method of Li and Li (2026)
+##' Displays standardized residuals from polynomial or latent-factor fingerprinting
 ##' against observation index or user-supplied coordinates, with a horizontal
 ##' reference line at zero. Patterns can indicate departures from the model.
-##' @param x A fitted object returned by \code{fingerprint()}.
+##' @param x A fitted object returned by \code{fingerprint()},
+##'   \code{fingerprintPoly()}, or \code{fingerprintLatent()}.
 ##' @param index Optional numeric vector of observation coordinates, such as
 ##'   time, of the same length as the residuals. Defaults to observation index.
 ##' @param xlab,ylab Axis labels.

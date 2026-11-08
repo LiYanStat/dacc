@@ -72,7 +72,7 @@ previous analyses and comparing methods: EE, PBC, TS and TS.TempSt, with their
 original estimation and confidence interval procedures. This is the original
 fingerprint function under a new name; its arguments and defaults are retained.
 For new analyses, use fingerprint, which implements the manuscript method with
-polynomial shrinkage and optional estimation of variance inflation factors.
+polynomial shrinkage and optional estimation of variance inflation coefficients.
 }
 \seealso{\code{\link{fingerprint}} for the recommended manuscript method.}
 \examples{

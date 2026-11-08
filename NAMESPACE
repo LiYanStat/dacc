@@ -4,6 +4,8 @@ S3method(plot,fingerprint)
 
 export(Covest)
 export(fingerprint)
+export(fingerprintPoly)
+export(fingerprintLatent)
 export(fingerprintLegacy)
 export(fpPrep)
 import(magrittr)

@@ -1,3 +1,47 @@
+# dacc 0.2.0
+
+## Method interface
+
+* Renamed the polynomial implementation to `fingerprintPoly()`. `fingerprint()`
+  is now a common entry point with `method = "poly"` (default), `"linear"`, `"latent"`,
+  `"EE"`, `"PBC"`, `"TS"`, or `"TS.TempSt"`. Method-specific arguments are
+  passed through `...`.
+* Retained `fingerprintLegacy()` and its original procedures. These can be
+  selected directly by `method` in `fingerprint()`. Removed the redundant
+  `"legacy"` choice and the `legacy.method` selector.
+
+* Added `method = "linear"` as an explicit degree-one polynomial method,
+  retaining both estimated and fixed inflation-coefficient options. Any supplied
+  degree is overridden with one.
+
+## Latent factor framework
+
+* Added `fingerprintLatent()` implementing the latent-factor framework of
+  Li and Li (2026), including Algorithm 1 spike and noise corrections,
+  precision-weight selection, variance inflation estimation, asymptotic
+  confidence intervals, and residual diagnostics.
+* Added automatic factor-count selection from control-covariance eigenvalues
+  using Kritchman and Nadler (2008), `factor.method = "KN"` (default), or
+  Passemier et al. (2017), `factor.method = "PLY"`. KN uses optional package
+  RMTstat.
+  An explicit `n.factors` overrides selection. The selected count is returned
+  as `n.factors`. Both selectors allow zero factors and configurable search caps.
+* Supports singular control covariance and theta weights equal to -1.
+* Both modern fit classes inherit from `fingerprint` and use the existing plot
+  method, including the pointwise normal residual reference band.
+* Documented that exact residual matching with estimated latent inflation
+  factors makes the plug-in residual diagnostic zero (p-value near 0.5).
+* Added independent matrix checks for trace approximations, weighted TLS,
+  covariance estimates, and method dispatch.
+
+## Terminology
+
+* Use variance inflation coefficients for the variability quantities, reserving
+  factor terminology for the latent structure. The preferred arguments are now
+  `estimate.inflation` and `inflation.grid`; the old argument names are no
+  longer accepted. Latent-selection controls (`n.factors`,
+  `factor.method`, `factor.level`, `factor.delta`, and `max.factors`) are unchanged.
+
 # dacc 0.1.0
 
 ## New features
