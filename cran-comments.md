@@ -48,8 +48,3 @@ by the local full check, rather than these GitHub results.
 The CRAN source package index retrieved on 2026-11-08 lists no reverse
 dependencies, including suggested or enhanced dependencies.
 
-## Outstanding before submission
-
-- Recheck the final 0.1.0 source tarball after the version change.
-
-- Have the designated maintainer review and approve the release and submission.
